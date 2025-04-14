@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bulk Image Editor</title>
+    <link rel="stylesheet" href="css/styles.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/body-pix"></script>
+	<script src="js/ImageEditer.js"></script>
+	<!-- Google AdSense -->
+<script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7143670562083095"
+     crossorigin="anonymous"></script>
+
+</head>
+<body><div class="Vertical-ad1"></div>
+    <div class="container">
+        <h2>Image Editor</h2>
+        <input type="file" id="imageUpload" multiple accept="image/*">
+        <div class="input-group">
+            <input type="number" id="width" placeholder="Width" value="800">
+            <input type="number" id="height" placeholder="Height" value="600">
+			<label>
+        <input type="checkbox" id="maintainAspectRatio"> Maintain Aspect Ratio
+    </label>
+        </div>
+		    <div class="input-group">
+    <label for="targetSize">Max Size (KB):</label>
+    <input type="number" id="targetSize" placeholder="e.g. 200">
+</div>
+<div class="input-group disabledexport" id="dropdownformat">
+    <label for="format">Export Format:</label>
+    <select id="format">
+        <option value="jpeg">JPEG</option>
+        <option value="jpg">JPG</option>
+        <option value="png">PNG</option>
+    </select>
+</div>
+        <button id="resizeBtn">Resize</button>
+        <button id="exportBtn" class="disabledexport">Export Image</button>
+        <div id="imagePreview" class="image-grid"></div>
+    </div>
+
+<div class="Vertical-ad2"> <!-- Responsive Ad Unit -->
+</div>
+
+
+</body>
+
+
+</html>

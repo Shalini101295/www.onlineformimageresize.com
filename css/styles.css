@@ -1,0 +1,149 @@
+/* Reset some basic styles */
+body, h2, input, label, button {
+    margin: 0;
+    padding: 10px;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+body {
+    background: linear-gradient(145deg, #e6f0ff, #ffffff);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 40px;
+    box-sizing: border-box;
+}
+
+.container {
+    background-color: #e19909;
+    padding: 30px 40px;
+    border-radius: 16px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    max-width: 800px;
+    width: 100%;
+}
+
+h2 {
+    text-align: center;
+    font-size: 30px;
+    font-style: italic;
+    margin-bottom: 24px;
+    color: #1500fa;
+    font-family: cursive;
+}
+
+.input-group {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.input-group input[type="number"],
+.input-group input[type="color"] {
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    flex: 1;
+    min-width: 80px;
+    transition: border-color 0.3s;
+	max-width: 200px;
+}
+
+.input-group input[type="number"]:focus {
+    border-color: #007bff;
+    outline: none;
+}
+
+.input-group label {
+        font-size: 14px;
+    color: #0d0d0d;
+    font-family: cursive;
+}
+
+button {
+    background-color: #1500fa;
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    margin-right: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background-color 0.3s ease;
+}
+
+
+.button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+button:active {
+    transform: scale(0.98);
+}
+
+.reenableexport
+{
+dispaly: inline !important;
+}
+
+.disabledexport
+{
+display: none;
+}
+
+.Vertical-ad2,.Vertical-ad1
+{
+width: 20%;
+height:100%
+	
+}
+
+
+
+.image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 16px;
+    margin-top: 20px;
+}
+
+.image-grid img {
+    width: 100%;
+    height: auto;
+    border-radius: 12px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    object-fit: cover;
+    transition: transform 0.2s ease;
+}
+
+.image-grid img:hover {
+    transform: scale(1.05);
+    cursor: pointer;
+}
+
+input[type="checkbox"] {
+    transform: scale(1.2);
+    margin-left: 8px;
+    margin-right: 4px;
+}
+
+@media screen and (max-width: 600px) {
+    .container {
+        padding: 20px;
+    }
+
+    button {
+        width: 100%;
+        margin-bottom: 12px;
+    }
+}
