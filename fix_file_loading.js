@@ -117,19 +117,48 @@ function quickLoadExcelFile(projectPath, filename) {
             const workbook = XLSX.read(buffer, {type: 'array'});
             console.log('📋 Workbook sheets:', workbook.SheetNames);
             
-            // Call the existing Excel processing function
-            if (typeof window.excelData !== 'undefined') {
-                window.excelData = buffer;
-            }
+            // Process the Excel data properly
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            const jsonData = XLSX.utils.sheet_to_json(worksheet);
             
-            // Trigger the analyzer
+            console.log('📊 Processed Excel data:', jsonData.length, 'rows');
+            
+            // Set global variables that the analyzer expects
+            window.excelData = jsonData;
+            window.workbook = workbook;
+            window.selectedSheet = firstSheetName;
+            
+            // Get column names
+            const columns = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
+            window.allColumns = columns;
+            
+            console.log('📋 Available columns:', columns);
+            
+            // Trigger the analyzer with correct data format
             if (typeof processExcelFile === 'function') {
                 processExcelFile(buffer, filename);
             } else if (typeof loadExcelData === 'function') {
                 loadExcelData(workbook);
+            } else if (typeof populateColumnSelectors === 'function') {
+                // Pass columns array, not workbook object
+                populateColumnSelectors(columns);
+                
+                // Initialize other analyzer functions if they exist
+                if (typeof setupFilterLoader === 'function') {
+                    setupFilterLoader();
+                }
+                if (typeof setupChartGenerator === 'function') {
+                    setupChartGenerator();
+                }
+                
+                // Show the relevant sections
+                $('.filter-section').show();
+                $('#columnsContainer').show();
+                $('.charts-section').show();
+                
+                alert(`✅ Excel file loaded successfully!\n\nFound ${jsonData.length} rows with columns:\n${columns.join(', ')}\n\nYou can now create charts!`);
             } else {
-                // Basic processing
-                populateColumnSelectors(workbook);
                 alert('✅ Excel file loaded successfully! You can now create charts.');
             }
         })

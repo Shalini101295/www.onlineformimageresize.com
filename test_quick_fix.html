@@ -297,8 +297,16 @@
                 })
                 .then(buffer => {
                     const workbook = XLSX.read(buffer, {type: 'array'});
+                    const firstSheetName = workbook.SheetNames[0];
+                    const worksheet = workbook.Sheets[firstSheetName];
+                    const jsonData = XLSX.utils.sheet_to_json(worksheet);
+                    const columns = jsonData.length > 0 ? Object.keys(jsonData[0]) : [];
+                    
                     console.log('✅ File loaded! Sheets:', workbook.SheetNames);
-                    alert(`✅ ${fileName} loaded successfully!\nSheets: ${workbook.SheetNames.join(', ')}\nSize: ${buffer.byteLength} bytes`);
+                    console.log('📊 Data rows:', jsonData.length);
+                    console.log('📋 Columns:', columns);
+                    
+                    alert(`✅ ${fileName} loaded successfully!\nSheets: ${workbook.SheetNames.join(', ')}\nRows: ${jsonData.length}\nColumns: ${columns.join(', ')}\nSize: ${buffer.byteLength} bytes`);
                 })
                 .catch(error => {
                     console.error('❌ Failed to load file:', error);
