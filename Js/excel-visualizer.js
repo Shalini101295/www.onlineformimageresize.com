@@ -2,7 +2,7 @@
 
 // Global variables - accessible to enhanced upload system
 window.excelData = [];
-let filterableColumns = [];
+window.filterableColumns = [];
 const colorPreferences = {};
 const chartRegistry = {};
 window.allColumns = [];
@@ -80,11 +80,11 @@ function populateColumnSelectors(columns) {
 
 function setupFilterLoader() {
   $('#loadFilters').click(function () {
-    filterableColumns = $('#filterColumns').val();
-    if (!filterableColumns || filterableColumns.length === 0) return alert('Select at least one column to filter.');
+    window.filterableColumns = $('#filterColumns').val();
+    if (!window.filterableColumns || window.filterableColumns.length === 0) return alert('Select at least one column to filter.');
 
     $('#filterOptions').empty();
-    filterableColumns.forEach(col => {
+    window.filterableColumns.forEach(col => {
       const values = [...new Set(window.excelData.map(row => row[col]))];
       const filterId = `filter-${col.replace(/\s+/g, '_')}`;
 
@@ -246,7 +246,7 @@ $('#saveSettingsBtn').click(function () {
 
 function applyFilters() {
   return window.excelData.filter(row => {
-    return filterableColumns.every(col => {
+    return window.filterableColumns.every(col => {
       const filterId = `filter-${col.replace(/\s+/g, '_')}`;
       const checked = $(`input[name="${filterId}"]:checked`).map(function () {
         return $(this).val();
@@ -1141,7 +1141,7 @@ function randomChoice(array) {
 
 function getFilterSummary() {
   const activeFilters = [];
-  filterableColumns.forEach(col => {
+  window.filterableColumns.forEach(col => {
     const filterId = `filter-${col.replace(/\s+/g, '_')}`;
     const checked = $(`input[name="${filterId}"]:checked`).length;
     const total = $(`input[name="${filterId}"]`).length;
@@ -1311,7 +1311,7 @@ function autoSaveProject() {
 
 function saveChartSettings() {
   const chartSettings = {
-    filterableColumns: filterableColumns,
+    filterableColumns: window.filterableColumns,
     selectedColumns: $('#columnSelect').val() || [],
     theme: $('#themeSelect').val() || 'default',
     charts: {},
@@ -1336,7 +1336,7 @@ function saveChartSettings() {
   });
 
   // Save filter settings
-  filterableColumns.forEach(col => {
+  window.filterableColumns.forEach(col => {
     const filterId = `filter-${col.replace(/\s+/g, '_')}`;
     const checked = $(`input[name="${filterId}"]:checked`).map(function() {
       return $(this).val();

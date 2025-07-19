@@ -74,30 +74,27 @@ function handleFileUpload() {
             throw new Exception('Project not found or access denied');
         }
         
-        // Create unique filename to prevent overwrites
+        // Create safe filename
         $safe_filename = sanitizeFilename($file['name']);
         $target_path = $project_dir . '/' . $safe_filename;
         
-        // If file already exists, add timestamp
-        if (file_exists($target_path)) {
-            $name = pathinfo($safe_filename, PATHINFO_FILENAME);
-            $ext = pathinfo($safe_filename, PATHINFO_EXTENSION);
-            $safe_filename = $name . '_' . time() . '.' . $ext;
-            $target_path = $project_dir . '/' . $safe_filename;
-        }
+        // Check if file exists - we now allow replacement for same filename
+        $replacing_existing = file_exists($target_path);
         
         // Move uploaded file
         if (move_uploaded_file($file['tmp_name'], $target_path)) {
             // Update project metadata
             updateProjectMetadata($project_dir, $safe_filename);
             
-            logFileActivity('UPLOAD_SUCCESS', $user_id, $project_id, $safe_filename, 'File uploaded successfully');
+            $action_message = $replacing_existing ? 'File replaced successfully' : 'File uploaded successfully';
+            logFileActivity('UPLOAD_SUCCESS', $user_id, $project_id, $safe_filename, $action_message);
             
             echo json_encode([
                 'success' => true,
-                'message' => 'File uploaded successfully',
+                'message' => $action_message,
                 'filename' => $safe_filename,
-                'file_path' => $target_path
+                'file_path' => $target_path,
+                'replaced' => $replacing_existing
             ]);
         } else {
             throw new Exception('Failed to save uploaded file');

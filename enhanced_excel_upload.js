@@ -101,6 +101,56 @@ function uploadExcelToProject(file) {
         return;
     }
     
+    // Check file name restrictions if project already has files
+    validateFileNameForProject(file.name, function(isValid, message) {
+        if (!isValid) {
+            alert(message);
+            return;
+        }
+        
+        // Proceed with upload
+        proceedWithUpload(file);
+    });
+}
+
+function validateFileNameForProject(fileName, callback) {
+    if (!projectFiles || projectFiles.length === 0) {
+        // No files in project yet, any name is allowed
+        callback(true, '');
+        return;
+    }
+    
+    // Get the base name without extension for comparison
+    const uploadBaseName = fileName.replace(/\.[^/.]+$/, '').toLowerCase();
+    const existingFileNames = projectFiles.map(f => f.name.replace(/\.[^/.]+$/, '').toLowerCase());
+    
+    // Check if the exact filename already exists (allow replacement)
+    const exactMatch = projectFiles.find(f => f.name.toLowerCase() === fileName.toLowerCase());
+    if (exactMatch) {
+        // Same filename - allow replacement
+        callback(true, '');
+        return;
+    }
+    
+    // Check if base name matches any existing file (different extension)
+    const baseNameExists = existingFileNames.includes(uploadBaseName);
+    if (baseNameExists) {
+        // Different file name than existing files
+        callback(false, 
+            'This project already contains Excel files with different names. ' +
+            'Please either:\n' +
+            '• Create a new project for this file, or\n' +
+            '• Use the same filename as existing files to replace them\n' +
+            '• Existing files: ' + projectFiles.map(f => f.name).join(', ')
+        );
+        return;
+    }
+    
+    // New unique filename - allowed
+    callback(true, '');
+}
+
+function proceedWithUpload(file) {
     // Show upload progress
     $('#uploadProgress').show();
     $('#progressText').text('Uploading ' + file.name + '...');
@@ -288,30 +338,83 @@ function loadExcelFromUrl(fileUrl, filename) {
             const excelData = XLSX.utils.sheet_to_json(sheet);
             
             if (excelData.length > 0) {
-                // Update global variables (assuming they exist in the main visualizer)
-                if (typeof window.excelData !== 'undefined') {
-                    window.excelData = excelData;
-                    window.allColumns = Object.keys(excelData[0]);
-                }
+                // Update global variables
+                window.excelData = excelData;
+                window.allColumns = Object.keys(excelData[0]);
                 
                 // Update UI to show file is loaded
                 updateFileLoadedUI(filename);
                 
-                // Call existing functions if they exist
+                // Populate column selectors for filtering and analysis
                 if (typeof populateColumnSelectors === 'function') {
-                    populateColumnSelectors(Object.keys(excelData[0]));
+                    populateColumnSelectors(window.allColumns);
                 }
                 
+                // Load any saved settings for this file
                 if (typeof loadSettingsForFile === 'function') {
                     loadSettingsForFile(filename);
                 }
                 
-                // Show the filter and column sections
+                // Initialize filter columns selector
+                if ($('#filterColumnSelect').length > 0) {
+                    $('#filterColumnSelect').html('<select id="filterColumns" multiple></select>');
+                    window.allColumns.forEach(col => {
+                        $('#filterColumns').append(`<option value="${col}">${col}</option>`);
+                    });
+                }
+                
+                // Initialize display columns selector
+                if ($('#columnSelect').length > 0) {
+                    $('#columnSelect').empty();
+                    window.allColumns.forEach(col => {
+                        $('#columnSelect').append(`<option value="${col}">${col}</option>`);
+                    });
+                }
+                
+                // Show the necessary sections
                 $('.filter-section').show();
                 $('#columnsContainer').show();
+                $('.chart-section').show();
+                
+                // Setup filter loader functionality
+                $('#loadFilters').off('click').on('click', function() {
+                    const selectedColumns = $('#filterColumns').val();
+                    if (!selectedColumns || selectedColumns.length === 0) {
+                        alert('Select at least one column to filter.');
+                        return;
+                    }
+                    
+                    // Create filter options for selected columns
+                    $('#filterOptions').empty();
+                    selectedColumns.forEach(col => {
+                        const values = [...new Set(window.excelData.map(row => row[col]))];
+                        const filterId = `filter-${col.replace(/\s+/g, '_')}`;
+                        
+                        let html = `<div><strong>${col}</strong><br>`;
+                        values.forEach(val => {
+                            html += `<label><input type="checkbox" name="${filterId}" value="${val}" checked> ${val}</label><br>`;
+                        });
+                        html += `</div><hr>`;
+                        $('#filterOptions').append(html);
+                    });
+                    
+                    // Set global variable for other functions
+                    if (typeof window.filterableColumns !== 'undefined') {
+                        window.filterableColumns = selectedColumns;
+                    }
+                    
+                    console.log('Filter options loaded for columns:', selectedColumns);
+                });
                 
                 hideLoadingMessage();
-                showUploadSuccess('File loaded successfully!');
+                showUploadSuccess('File loaded successfully! You can now set up filters and create charts.');
+                
+                console.log('Excel data loaded:', {
+                    rows: excelData.length,
+                    columns: window.allColumns.length,
+                    columnNames: window.allColumns
+                });
+                
             } else {
                 hideLoadingMessage();
                 showUploadError('File appears to be empty or invalid');
@@ -319,8 +422,8 @@ function loadExcelFromUrl(fileUrl, filename) {
         })
         .catch(error => {
             hideLoadingMessage();
-            console.error('Error processing file:', error);
-            showUploadError('Failed to process Excel file');
+            console.error('Error processing Excel file:', error);
+            showUploadError('Failed to process Excel file: ' + error.message);
         });
 }
 

@@ -4,6 +4,8 @@
 
 ✅ **Excel File Upload to Project Folders**: Files now upload to user-specific project directories  
 ✅ **"Back to Projects" Navigation**: Now correctly redirects to `projects_dashboard.html`  
+✅ **Excel Analyzer Integration**: Upload system now properly activates the data analyzer  
+✅ **File Name Validation**: Same filename = replace, different filename = error with instructions  
 ✅ **Project-Based File Management**: Each project maintains its own Excel files  
 ✅ **Secure File Storage**: Files protected and organized by user/project  
 
@@ -23,8 +25,12 @@
 ### **3. Updated Files** (Replace existing)
 - `Js/excel-visualizer.js` - Updated with navigation fix and global variables
 - `excel-visualizer.html` - Added enhanced upload system
+- `enhanced_excel_upload.js` - Updated with analyzer integration and file validation
 - `updated_login_script.js` - Redirects to projects dashboard
 - `.htaccess` - Use `.htaccess_projects` content for enhanced security
+
+### **4. Optional Test File** (For debugging)
+- `test_integration.html` - Test page to verify integration works properly
 
 ---
 
@@ -69,6 +75,8 @@ chmod 600 projects_index.txt
 - **Load/Delete** files with one click
 - **Progress tracking** during uploads
 - **File validation** (size, type, security)
+- **Smart file naming**: Same name = replace, different name = error with guidance
+- **Analyzer integration**: Loading files automatically activates data analysis tools
 
 ### **🔄 Enhanced User Flow**
 1. **Login** → Projects Dashboard
@@ -132,22 +140,26 @@ user_projects/
 2. Create a new project → Project should appear in dashboard
 3. Open project → Should load `excel-visualizer.html`
 
-### **Test 2: File Upload**
+### **Test 2: File Upload & Analysis**
 1. In Excel Visualizer, click "+ Upload Excel File"
 2. Select a `.xlsx` or `.xls` file
 3. Watch upload progress
 4. File should appear in project files list
 5. Click "Load Data" → Excel data should load into visualizer
+6. Verify filter sections appear and columns are populated
+7. Try setting up filters and creating charts
 
 ### **Test 3: Navigation**
 1. In Excel Visualizer, click "← Back to Projects"
 2. Should return to `projects_dashboard.html` (not login page)
 3. Project should still be visible in dashboard
 
-### **Test 4: File Persistence**
+### **Test 4: File Persistence & Validation**
 1. Upload file to project
 2. Go back to projects and open same project again
 3. File should still be there and loadable
+4. Try uploading same filename → Should replace existing file
+5. Try uploading different filename → Should show error with instructions
 
 ---
 

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Integration Test - Excel Upload & Analyzer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 3px;
+        }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+        #testResults {
+            white-space: pre-wrap;
+            background: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>Excel Upload & Analyzer Integration Test</h1>
+    
+    <div class="test-section">
+        <h2>🧪 Integration Tests</h2>
+        <button onclick="testAuthentication()">Test Authentication</button>
+        <button onclick="testProjectContext()">Test Project Context</button>
+        <button onclick="testGlobalVariables()">Test Global Variables</button>
+        <button onclick="testFunctionAvailability()">Test Function Availability</button>
+        <button onclick="runAllTests()">Run All Tests</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+    
+    <div class="test-section">
+        <h2>📊 Test Results</h2>
+        <div id="testResults"></div>
+    </div>
+    
+    <div class="test-section">
+        <h2>🔧 Quick Setup</h2>
+        <button onclick="setupTestData()">Setup Test Data</button>
+        <button onclick="simulateFileLoad()">Simulate File Load</button>
+        <p><em>Use these buttons to simulate the Excel upload process without actual files.</em></p>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const resultDiv = document.getElementById('testResults');
+            const prefix = type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️';
+            resultDiv.innerHTML += `[${timestamp}] ${prefix} ${message}\n`;
+            resultDiv.scrollTop = resultDiv.scrollHeight;
+        }
+        
+        function testAuthentication() {
+            log('Testing Authentication System...', 'info');
+            
+            // Check localStorage for user data
+            const currentUser = localStorage.getItem('currentUser');
+            const currentProject = localStorage.getItem('currentProject');
+            
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                log(`User found: ${user.name} (ID: ${user.id})`, 'success');
+            } else {
+                log('No user found in localStorage', 'error');
+            }
+            
+            if (currentProject) {
+                const project = JSON.parse(currentProject);
+                log(`Project found: ${project.id}`, 'success');
+            } else {
+                log('No project found in localStorage', 'error');
+            }
+        }
+        
+        function testProjectContext() {
+            log('Testing Project Context...', 'info');
+            
+            if (typeof currentUser !== 'undefined' && currentUser) {
+                log(`Current user accessible: ${currentUser.name}`, 'success');
+            } else {
+                log('Current user not accessible globally', 'error');
+            }
+            
+            if (typeof currentProject !== 'undefined' && currentProject) {
+                log(`Current project accessible: ${currentProject.id}`, 'success');
+            } else {
+                log('Current project not accessible globally', 'error');
+            }
+        }
+        
+        function testGlobalVariables() {
+            log('Testing Global Variables...', 'info');
+            
+            // Test window.excelData
+            if (typeof window.excelData !== 'undefined') {
+                log(`window.excelData exists, length: ${window.excelData.length}`, 'success');
+            } else {
+                log('window.excelData not found', 'error');
+            }
+            
+            // Test window.allColumns
+            if (typeof window.allColumns !== 'undefined') {
+                log(`window.allColumns exists, length: ${window.allColumns.length}`, 'success');
+            } else {
+                log('window.allColumns not found', 'error');
+            }
+            
+            // Test window.filterableColumns
+            if (typeof window.filterableColumns !== 'undefined') {
+                log(`window.filterableColumns exists, length: ${window.filterableColumns.length}`, 'success');
+            } else {
+                log('window.filterableColumns not found', 'error');
+            }
+        }
+        
+        function testFunctionAvailability() {
+            log('Testing Function Availability...', 'info');
+            
+            const functionsToTest = [
+                'populateColumnSelectors',
+                'loadSettingsForFile',
+                'setupFilterLoader',
+                'initializeEnhancedUpload',
+                'loadExcelFromUrl',
+                'uploadExcelToProject'
+            ];
+            
+            functionsToTest.forEach(funcName => {
+                if (typeof window[funcName] === 'function') {
+                    log(`${funcName}() is available`, 'success');
+                } else {
+                    log(`${funcName}() not found`, 'error');
+                }
+            });
+        }
+        
+        function runAllTests() {
+            log('🚀 Running All Integration Tests...', 'info');
+            log('=' * 50, 'info');
+            
+            testAuthentication();
+            testProjectContext();
+            testGlobalVariables();
+            testFunctionAvailability();
+            
+            log('=' * 50, 'info');
+            log('All tests completed', 'info');
+        }
+        
+        function clearResults() {
+            document.getElementById('testResults').innerHTML = '';
+        }
+        
+        function setupTestData() {
+            log('Setting up test authentication data...', 'info');
+            
+            // Create test user
+            const testUser = {
+                id: 'test_user_123',
+                name: 'Test User',
+                email: 'test@example.com'
+            };
+            
+            // Create test project
+            const testProject = {
+                id: 'test_project_456',
+                name: 'Test Project',
+                user_id: 'test_user_123'
+            };
+            
+            localStorage.setItem('currentUser', JSON.stringify(testUser));
+            localStorage.setItem('currentProject', JSON.stringify(testProject));
+            
+            log('Test data created in localStorage', 'success');
+        }
+        
+        function simulateFileLoad() {
+            log('Simulating Excel file load...', 'info');
+            
+            // Create sample Excel data
+            const sampleData = [
+                { Name: 'John', Age: 30, Department: 'IT', Salary: 50000 },
+                { Name: 'Jane', Age: 25, Department: 'HR', Salary: 45000 },
+                { Name: 'Bob', Age: 35, Department: 'IT', Salary: 60000 },
+                { Name: 'Alice', Age: 28, Department: 'Finance', Salary: 55000 }
+            ];
+            
+            // Set global variables
+            window.excelData = sampleData;
+            window.allColumns = Object.keys(sampleData[0]);
+            window.filterableColumns = [];
+            
+            log(`Sample data loaded: ${sampleData.length} rows, ${window.allColumns.length} columns`, 'success');
+            log(`Columns: ${window.allColumns.join(', ')}`, 'info');
+            
+            // Try to populate column selectors if function exists
+            if (typeof populateColumnSelectors === 'function') {
+                populateColumnSelectors(window.allColumns);
+                log('Column selectors populated', 'success');
+            } else {
+                log('populateColumnSelectors function not available', 'error');
+            }
+        }
+        
+        // Initialize test
+        window.addEventListener('load', function() {
+            log('Integration Test Page Loaded', 'success');
+            log('Use the buttons above to test different components', 'info');
+        });
+    </script>
+</body>
+</html>
