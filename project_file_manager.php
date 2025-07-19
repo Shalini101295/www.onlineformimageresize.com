@@ -239,15 +239,21 @@ function loadExcelData($data) {
         throw new Exception('File not found');
     }
     
-    // Return file info for frontend to process
+    // Read file content and encode as base64
+    $file_content = file_get_contents($file_path);
+    if ($file_content === false) {
+        throw new Exception('Failed to read file');
+    }
+    
+    $base64_content = base64_encode($file_content);
+    
+    // Return file content directly
     echo json_encode([
         'success' => true,
-        'message' => 'File found',
+        'message' => 'File loaded successfully',
         'filename' => $filename,
-        'file_path' => $file_path,
-        'file_url' => 'project_file_download.php?user_id=' . urlencode($user_id) . 
-                     '&project_id=' . urlencode($project_id) . 
-                     '&filename=' . urlencode($filename)
+        'file_content' => $base64_content,
+        'file_size' => filesize($file_path)
     ]);
 }
 

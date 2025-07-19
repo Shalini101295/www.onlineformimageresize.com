@@ -308,8 +308,8 @@ function loadExcelFileFromProject(filename) {
         }),
         success: function(response) {
             if (response.success) {
-                // Load the file using the secure download URL
-                loadExcelFromUrl(response.file_url, filename);
+                // Load the file using the base64 content
+                loadExcelFromBase64(response.file_content, filename);
             } else {
                 hideLoadingMessage();
                 showUploadError('Failed to load file: ' + response.message);
@@ -323,19 +323,21 @@ function loadExcelFileFromProject(filename) {
     });
 }
 
-function loadExcelFromUrl(fileUrl, filename) {
-    fetch(fileUrl)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Failed to fetch file');
-            }
-            return response.arrayBuffer();
-        })
-        .then(data => {
-            // Process the Excel file using XLSX library
-            const workbook = XLSX.read(data, { type: 'array' });
-            const sheet = workbook.Sheets[workbook.SheetNames[0]];
-            const excelData = XLSX.utils.sheet_to_json(sheet);
+function loadExcelFromBase64(base64Content, filename) {
+    try {
+        // Convert base64 to binary string
+        const binaryString = atob(base64Content);
+        
+        // Convert binary string to Uint8Array
+        const bytes = new Uint8Array(binaryString.length);
+        for (let i = 0; i < binaryString.length; i++) {
+            bytes[i] = binaryString.charCodeAt(i);
+        }
+        
+        // Process the Excel file using XLSX library
+        const workbook = XLSX.read(bytes, { type: 'array' });
+        const sheet = workbook.Sheets[workbook.SheetNames[0]];
+        const excelData = XLSX.utils.sheet_to_json(sheet);
             
             if (excelData.length > 0) {
                 // Update global variables
@@ -419,12 +421,11 @@ function loadExcelFromUrl(fileUrl, filename) {
                 hideLoadingMessage();
                 showUploadError('File appears to be empty or invalid');
             }
-        })
-        .catch(error => {
+        } catch (error) {
             hideLoadingMessage();
             console.error('Error processing Excel file:', error);
             showUploadError('Failed to process Excel file: ' + error.message);
-        });
+        }
 }
 
 function deleteProjectFile(filename) {

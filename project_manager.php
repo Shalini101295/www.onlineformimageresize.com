@@ -69,6 +69,9 @@ try {
         case 'delete_project':
             deleteProject($input);
             break;
+        case 'delete_project_completely':
+            deleteProjectCompletely($input);
+            break;
         default:
             throw new Exception('Invalid action: ' . $action);
     }
@@ -300,6 +303,46 @@ function deleteProject($data) {
     ]);
 }
 
+function deleteProjectCompletely($data) {
+    $user_id = $data['user_id'] ?? '';
+    $project_id = $data['project_id'] ?? '';
+    
+    if (empty($user_id) || empty($project_id)) {
+        throw new Exception('User ID and Project ID are required');
+    }
+    
+    $project = findProjectById($project_id, $user_id);
+    if (!$project) {
+        throw new Exception('Project not found');
+    }
+    
+    $project_dir = $project['project_dir'];
+    
+    // Remove all files in the project directory
+    if (is_dir($project_dir)) {
+        $files = array_diff(scandir($project_dir), array('.', '..'));
+        foreach ($files as $file) {
+            $file_path = $project_dir . '/' . $file;
+            if (is_file($file_path)) {
+                unlink($file_path);
+            }
+        }
+        
+        // Remove the project directory
+        rmdir($project_dir);
+    }
+    
+    // Remove from projects index
+    removeFromProjectsIndex($project_id);
+    
+    logProjectActivity('DELETE_PROJECT_COMPLETELY', $user_id, $project_id, 'Project and folder completely deleted');
+    
+    echo json_encode([
+        'success' => true,
+        'message' => 'Project and all files deleted successfully'
+    ]);
+}
+
 // Helper functions
 function loadProjectsIndex() {
     global $projects_index_file;
@@ -349,6 +392,24 @@ function updateProjectsIndex($project_id, $updated_project) {
         }
         file_put_contents($projects_index_file, $content, LOCK_EX);
     }
+}
+
+function removeFromProjectsIndex($project_id) {
+    global $projects_index_file;
+    $projects = loadProjectsIndex();
+    $updated_projects = [];
+    
+    foreach ($projects as $project) {
+        if ($project['id'] !== $project_id) {
+            $updated_projects[] = $project;
+        }
+    }
+    
+    $content = '';
+    foreach ($updated_projects as $project) {
+        $content .= json_encode($project) . "\n";
+    }
+    file_put_contents($projects_index_file, $content, LOCK_EX);
 }
 
 function findProjectById($project_id, $user_id) {
