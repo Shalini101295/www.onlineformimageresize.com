@@ -1,0 +1,24 @@
+# Simple configuration for Excel Visualizer
+# Rename this file to .htaccess after uploading
+
+# Allow PHP execution
+AddType application/x-httpd-php .php
+
+# Prevent access to sensitive files
+<Files "*.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "*.log">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "*.sql">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Optional: Remove this section if it causes errors
+RewriteEngine On
