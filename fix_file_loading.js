@@ -173,8 +173,31 @@ $(document).ready(function() {
 // Add manual override function
 function forceDirectFileLoad() {
     console.log('🔧 Force loading known file...');
-    const knownFile = 'user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611/250720_New.xlsx';
-    quickLoadExcelFile('user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611', '250720_New.xlsx');
+    
+    // Try to get the correct path from saved scan results
+    const savedProjects = localStorage.getItem('quickFixProjects');
+    if (savedProjects) {
+        try {
+            const projects = JSON.parse(savedProjects);
+            if (projects.length > 0 && projects[0].files && projects[0].files.length > 0) {
+                const project = projects[0];
+                const file = projects[0].files[0];
+                console.log('📁 Using scanned project path:', project.path);
+                console.log('📄 Loading file:', file.name);
+                quickLoadExcelFile(project.path, file.name);
+                return;
+            }
+        } catch (e) {
+            console.error('Error parsing saved projects:', e);
+        }
+    }
+    
+    // Fallback to updated hardcoded path
+    const knownProjectPath = 'user_projects/shashank_sinha_0_4206/Test_Project_proj_1752926209_3120';
+    const knownFileName = '250720_New.xlsx';
+    
+    console.log('📁 Using fallback path:', knownProjectPath);
+    quickLoadExcelFile(knownProjectPath, knownFileName);
 }
 
 // Add debug button to the page

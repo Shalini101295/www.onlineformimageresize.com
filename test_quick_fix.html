@@ -102,7 +102,46 @@
 
         function testDirectFile() {
             const resultDiv = document.getElementById('directFileResult');
-            const knownFilePath = 'user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611/250720_New.xlsx';
+            
+            // First try to get the correct path from scan results
+            const savedProjects = localStorage.getItem('quickFixProjects');
+            if (savedProjects) {
+                try {
+                    const projects = JSON.parse(savedProjects);
+                    if (projects.length > 0 && projects[0].files && projects[0].files.length > 0) {
+                        const project = projects[0];
+                        const file = project.files[0];
+                        const correctPath = `${project.path}/${file.name}`;
+                        
+                        resultDiv.innerHTML = `<p>Testing direct access to: ${correctPath}</p>`;
+                        
+                        fetch(correctPath)
+                            .then(response => {
+                                if (response.ok) {
+                                    resultDiv.innerHTML = `
+                                        <div class="success">
+                                            <p>✅ Direct file access works!</p>
+                                            <p>File: ${file.name}</p>
+                                            <p>Size: ${file.size} bytes</p>
+                                            <button onclick="loadKnownFile('${correctPath}')">Load This File</button>
+                                        </div>
+                                    `;
+                                } else {
+                                    resultDiv.innerHTML = `<p style="color: red;">❌ Direct access failed: ${response.status}</p>`;
+                                }
+                            })
+                            .catch(error => {
+                                resultDiv.innerHTML = `<p style="color: red;">❌ Direct access error: ${error.message}</p>`;
+                            });
+                        return;
+                    }
+                } catch (e) {
+                    console.error('Error parsing saved projects:', e);
+                }
+            }
+            
+            // Fallback to old hardcoded path if no scan results
+            const knownFilePath = 'user_projects/shashank_sinha_0_4206/Test_Project_proj_1752926209_3120/250720_New.xlsx';
             
             resultDiv.innerHTML = `<p>Testing direct access to: ${knownFilePath}</p>`;
             
@@ -199,11 +238,35 @@
                 success: function(response) {
                     console.log('Scan all response:', response);
                     if (response.success && response.projects && response.projects.length > 0) {
+                        let projectsHtml = '<h4>📁 Found Projects:</h4>';
+                        response.projects.forEach((project, i) => {
+                            projectsHtml += `
+                                <div style="border: 1px solid #ddd; margin: 10px 0; padding: 10px; border-radius: 5px;">
+                                    <strong>Project ${i + 1}: ${project.name}</strong><br>
+                                    <small>Path: ${project.path}</small><br>
+                                    <strong>Files:</strong><br>
+                            `;
+                            project.files.forEach(file => {
+                                const fullPath = `${project.path}/${file.name}`;
+                                projectsHtml += `
+                                    📊 <a href="${fullPath}" target="_blank">${file.name}</a> 
+                                    (${file.size} bytes) 
+                                    <button onclick="testLoadFile('${project.path}', '${file.name}')" style="background: #007bff; color: white; border: none; padding: 2px 8px; border-radius: 3px; font-size: 12px; cursor: pointer;">Test Load</button><br>
+                                `;
+                            });
+                            projectsHtml += '</div>';
+                        });
+                        
                         resultDiv.innerHTML = `
                             <div class="success">
                                 <h4>✅ Found ${response.projects.length} project(s) with Excel files!</h4>
-                                <pre>${JSON.stringify(response, null, 2)}</pre>
-                                <button onclick="useManualResults(${JSON.stringify(response).replace(/"/g, '&quot;')})">Use These Files</button>
+                                ${projectsHtml}
+                                <br>
+                                <button onclick="useManualResults(${JSON.stringify(response).replace(/"/g, '&quot;')})">Save & Use These Files</button>
+                                <details style="margin-top: 10px;">
+                                    <summary>Show Raw JSON</summary>
+                                    <pre>${JSON.stringify(response, null, 2)}</pre>
+                                </details>
                             </div>
                         `;
                     } else {
@@ -219,6 +282,28 @@
                     resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error}</p>`;
                 }
             });
+        }
+
+        function testLoadFile(projectPath, fileName) {
+            console.log('🧪 Testing load file:', fileName, 'from', projectPath);
+            const fullPath = `${projectPath}/${fileName}`;
+            
+            fetch(fullPath)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                    return response.arrayBuffer();
+                })
+                .then(buffer => {
+                    const workbook = XLSX.read(buffer, {type: 'array'});
+                    console.log('✅ File loaded! Sheets:', workbook.SheetNames);
+                    alert(`✅ ${fileName} loaded successfully!\nSheets: ${workbook.SheetNames.join(', ')}\nSize: ${buffer.byteLength} bytes`);
+                })
+                .catch(error => {
+                    console.error('❌ Failed to load file:', error);
+                    alert(`❌ Failed to load ${fileName}: ${error.message}`);
+                });
         }
 
         function useManualResults(response) {
