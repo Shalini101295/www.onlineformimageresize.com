@@ -107,21 +107,11 @@ $(document).ready(function() {
                     // Store user data
                     localStorage.setItem('currentUser', JSON.stringify(response.user));
                     
-                    // Create default project for immediate access
-                    const defaultProject = {
-                        id: 'default_' + Date.now(),
-                        name: 'Data Analysis Session',
-                        description: 'Quick data visualization',
-                        user_id: response.user.id,
-                        created_at: new Date().toISOString()
-                    };
-                    localStorage.setItem('currentProject', JSON.stringify(defaultProject));
+                    showSuccess('Login successful! Redirecting to your projects...');
                     
-                    showSuccess('Login successful! Redirecting...');
-                    
-                    // Redirect after a short delay
+                    // Redirect to projects dashboard after a short delay
                     setTimeout(() => {
-                        window.location.href = 'excel-visualizer.html';
+                        window.location.href = 'projects_dashboard.html';
                     }, 1000);
                 } else {
                     showError(response.message || 'Login failed');

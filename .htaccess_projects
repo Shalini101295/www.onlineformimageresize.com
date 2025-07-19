@@ -1,0 +1,87 @@
+# Excel Visualizer - Secure Project Management
+
+# Protect user authentication files
+<Files "secure_users.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "auth_log.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "login_attempts.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Protect project management files
+<Files "projects_index.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "project_log.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Protect user project directories from direct access
+RedirectMatch 403 ^/.*user_projects/.*$
+
+# Protect metadata files
+<Files "project_metadata.json">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Allow PHP files to execute
+<Files "*.php">
+    Allow from all
+</Files>
+
+# Allow HTML and CSS files
+<Files "*.html">
+    Allow from all
+</Files>
+
+<Files "*.css">
+    Allow from all
+</Files>
+
+<Files "*.js">
+    Allow from all
+</Files>
+
+# Prevent access to backup and config files
+<Files "*.bak">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "*.old">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "*.tmp">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Basic security headers
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options SAMEORIGIN
+    Header always set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# Optional: Enable compression for better performance
+<IfModule mod_deflate.c>
+    AddOutputFilterByType DEFLATE text/plain
+    AddOutputFilterByType DEFLATE text/html
+    AddOutputFilterByType DEFLATE text/css
+    AddOutputFilterByType DEFLATE application/javascript
+    AddOutputFilterByType DEFLATE application/json
+</IfModule>
