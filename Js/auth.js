@@ -101,36 +101,52 @@ function handleLogin(e) {
     const password = $('#loginPassword').val();
     const rememberMe = $('#rememberMe').is(':checked');
 
-    // Simple validation (in real app, this would be server-side)
+    // Validation
     if (!email || !password) {
         showMessage('Please fill in all fields', 'error');
         return;
     }
 
-    // Simulate login (in real app, this would be an API call)
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    const user = users.find(u => u.email === email && u.password === password);
+    // Show loading state
+    const $submitBtn = $('#loginForm button[type="submit"]');
+    const originalText = $submitBtn.text();
+    $submitBtn.text('Signing In...').prop('disabled', true);
 
-    if (user) {
-        currentUser = {
-            id: user.id,
-            name: user.name,
-            email: user.email
-        };
-        
-        localStorage.setItem('currentUser', JSON.stringify(currentUser));
-        
-        if (rememberMe) {
-            localStorage.setItem('rememberUser', 'true');
+    // API call to server
+    $.ajax({
+        url: 'auth_backend.php',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: 'login',
+            email: email,
+            password: password
+        }),
+        success: function(response) {
+            if (response.success) {
+                currentUser = response.user;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                if (rememberMe) {
+                    localStorage.setItem('rememberUser', 'true');
+                }
+                
+                showMessage('Login successful!', 'success');
+                setTimeout(() => {
+                    showLandingPage();
+                }, 1000);
+            } else {
+                showMessage(response.message || 'Login failed', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Login error:', error);
+            showMessage('Connection error. Please try again.', 'error');
+        },
+        complete: function() {
+            $submitBtn.text(originalText).prop('disabled', false);
         }
-        
-        showMessage('Login successful!', 'success');
-        setTimeout(() => {
-            showLandingPage();
-        }, 1000);
-    } else {
-        showMessage('Invalid email or password', 'error');
-    }
+    });
 }
 
 function handleRegister(e) {
@@ -153,42 +169,53 @@ function handleRegister(e) {
         return;
     }
 
+    if (password.length < 6) {
+        showMessage('Password must be at least 6 characters', 'error');
+        return;
+    }
+
     if (!acceptTerms) {
         showMessage('Please accept the terms of service', 'error');
         return;
     }
 
-    // Check if user already exists
-    const users = JSON.parse(localStorage.getItem('users') || '[]');
-    if (users.find(u => u.email === email)) {
-        showMessage('User with this email already exists', 'error');
-        return;
-    }
+    // Show loading state
+    const $submitBtn = $('#registerForm button[type="submit"]');
+    const originalText = $submitBtn.text();
+    $submitBtn.text('Creating Account...').prop('disabled', true);
 
-    // Create new user
-    const newUser = {
-        id: Date.now().toString(),
-        name: name,
-        email: email,
-        password: password, // In real app, this would be hashed
-        createdAt: new Date().toISOString()
-    };
-
-    users.push(newUser);
-    localStorage.setItem('users', JSON.stringify(users));
-
-    currentUser = {
-        id: newUser.id,
-        name: newUser.name,
-        email: newUser.email
-    };
-    
-    localStorage.setItem('currentUser', JSON.stringify(currentUser));
-    
-    showMessage('Account created successfully!', 'success');
-    setTimeout(() => {
-        showLandingPage();
-    }, 1000);
+    // API call to server
+    $.ajax({
+        url: 'auth_backend.php',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify({
+            action: 'register',
+            name: name,
+            email: email,
+            password: password
+        }),
+        success: function(response) {
+            if (response.success) {
+                currentUser = response.user;
+                localStorage.setItem('currentUser', JSON.stringify(currentUser));
+                
+                showMessage('Account created successfully!', 'success');
+                setTimeout(() => {
+                    showLandingPage();
+                }, 1000);
+            } else {
+                showMessage(response.message || 'Registration failed', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Registration error:', error);
+            showMessage('Connection error. Please try again.', 'error');
+        },
+        complete: function() {
+            $submitBtn.text(originalText).prop('disabled', false);
+        }
+    });
 }
 
 function handleLogout() {
