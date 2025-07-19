@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug File Access - Excel Visualizer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        .test-section {
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .success { color: #28a745; }
+        .error { color: #dc3545; }
+        .warning { color: #ffc107; }
+        .info { color: #17a2b8; }
+        button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        #results {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 3px;
+            padding: 15px;
+            margin: 10px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        input[type="text"] {
+            width: 100%;
+            padding: 8px;
+            margin: 5px 0;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug File Access</h1>
+    
+    <div class="test-section">
+        <h2>Test Direct File Access</h2>
+        <p>Enter a file path to test if it's accessible:</p>
+        <input type="text" id="testPath" placeholder="user_projects/username/project/file.xlsx" value="">
+        <button onclick="testFileAccess()">Test File Access</button>
+        <button onclick="testBackendAPI()">Test Backend API</button>
+        <button onclick="checkCurrentProject()">Check Current Project</button>
+        <button onclick="clearResults()">Clear Results</button>
+    </div>
+
+    <div class="test-section">
+        <h2>📋 Test Results</h2>
+        <div id="results">Click a test button to see results...</div>
+    </div>
+
+    <div class="test-section">
+        <h2>🛠️ Quick Tests</h2>
+        <button onclick="testCommonPaths()">Test Common File Paths</button>
+        <button onclick="checkPermissions()">Check File Permissions</button>
+        <button onclick="testCORS()">Test CORS Headers</button>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const results = document.getElementById('results');
+            const icons = {
+                'success': '✅',
+                'error': '❌', 
+                'warning': '⚠️',
+                'info': 'ℹ️'
+            };
+            const icon = icons[type] || 'ℹ️';
+            results.innerHTML += `[${timestamp}] ${icon} ${message}\n`;
+            results.scrollTop = results.scrollHeight;
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        function testFileAccess() {
+            const path = document.getElementById('testPath').value.trim();
+            if (!path) {
+                log('Please enter a file path to test', 'warning');
+                return;
+            }
+
+            log(`Testing direct access to: ${path}`, 'info');
+            
+            fetch(path)
+                .then(response => {
+                    log(`Response status: ${response.status} ${response.statusText}`, 
+                        response.ok ? 'success' : 'error');
+                    log(`Response headers: ${JSON.stringify([...response.headers])}`, 'info');
+                    
+                    if (response.ok) {
+                        return response.arrayBuffer();
+                    } else {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+                })
+                .then(buffer => {
+                    log(`File loaded successfully! Size: ${buffer.byteLength} bytes`, 'success');
+                    log(`File appears to be accessible and readable`, 'success');
+                })
+                .catch(error => {
+                    log(`Error accessing file: ${error.message}`, 'error');
+                    log('Possible causes:', 'warning');
+                    log('- File does not exist', 'warning');
+                    log('- .htaccess blocking access', 'warning');
+                    log('- Incorrect file path', 'warning');
+                    log('- Server permissions issue', 'warning');
+                });
+        }
+
+        function testBackendAPI() {
+            const currentUser = localStorage.getItem('currentUser');
+            const currentProject = localStorage.getItem('currentProject');
+            
+            if (!currentUser || !currentProject) {
+                log('No user or project found in localStorage', 'error');
+                log('Please login and select a project first', 'warning');
+                return;
+            }
+
+            const user = JSON.parse(currentUser);
+            const project = JSON.parse(currentProject);
+
+            log(`Testing backend API for user: ${user.name}, project: ${project.id}`, 'info');
+
+            $.ajax({
+                url: 'project_file_manager.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'get_project_files',
+                    user_id: user.id,
+                    project_id: project.id
+                }),
+                success: function(response) {
+                    log('Backend API Response:', 'success');
+                    log(JSON.stringify(response, null, 2), 'info');
+                    
+                    if (response.success && response.files && response.files.length > 0) {
+                        log(`Found ${response.files.length} files in project`, 'success');
+                        response.files.forEach(file => {
+                            log(`- ${file.name} (${file.size} bytes)`, 'info');
+                        });
+                        
+                        // Test loading the first file
+                        const firstFile = response.files[0];
+                        testFileLoad(user.id, project.id, firstFile.name);
+                    } else {
+                        log('No files found in project or API error', 'warning');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    log(`Backend API Error: ${error}`, 'error');
+                    log(`Status: ${xhr.status} ${xhr.statusText}`, 'error');
+                    log(`Response: ${xhr.responseText}`, 'error');
+                }
+            });
+        }
+
+        function testFileLoad(userId, projectId, filename) {
+            log(`Testing file load API for: ${filename}`, 'info');
+            
+            $.ajax({
+                url: 'project_file_manager.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'load_excel_data',
+                    user_id: userId,
+                    project_id: projectId,
+                    filename: filename
+                }),
+                success: function(response) {
+                    log('File Load API Response:', 'success');
+                    log(JSON.stringify(response, null, 2), 'info');
+                    
+                    if (response.success && response.file_path) {
+                        log(`File path returned: ${response.file_path}`, 'success');
+                        
+                        // Test direct access to this path
+                        document.getElementById('testPath').value = response.file_path;
+                        setTimeout(() => testFileAccess(), 1000);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    log(`File Load API Error: ${error}`, 'error');
+                    log(`Status: ${xhr.status} ${xhr.statusText}`, 'error');
+                }
+            });
+        }
+
+        function checkCurrentProject() {
+            log('Checking current authentication state...', 'info');
+            
+            const currentUser = localStorage.getItem('currentUser');
+            const currentProject = localStorage.getItem('currentProject');
+            
+            if (currentUser) {
+                const user = JSON.parse(currentUser);
+                log(`Current User: ${user.name} (ID: ${user.id})`, 'success');
+            } else {
+                log('No user found in localStorage', 'error');
+            }
+            
+            if (currentProject) {
+                const project = JSON.parse(currentProject);
+                log(`Current Project: ${project.id}`, 'success');
+            } else {
+                log('No project found in localStorage', 'error');
+            }
+        }
+
+        function testCommonPaths() {
+            log('Testing common file path patterns...', 'info');
+            
+            const testPaths = [
+                'user_projects/',
+                'project_file_manager.php',
+                'projects_dashboard.html',
+                'enhanced_excel_upload.js'
+            ];
+            
+            testPaths.forEach(path => {
+                setTimeout(() => {
+                    log(`Testing: ${path}`, 'info');
+                    fetch(path, { method: 'HEAD' })
+                        .then(response => {
+                            log(`${path}: ${response.status} ${response.statusText}`, 
+                                response.ok ? 'success' : 'warning');
+                        })
+                        .catch(error => {
+                            log(`${path}: Error - ${error.message}`, 'error');
+                        });
+                }, testPaths.indexOf(path) * 500);
+            });
+        }
+
+        function checkPermissions() {
+            log('Checking file permissions via backend...', 'info');
+            
+            fetch('project_file_manager.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    action: 'test_permissions'
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                log('Permission check response:', 'info');
+                log(JSON.stringify(data, null, 2), 'info');
+            })
+            .catch(error => {
+                log(`Permission check error: ${error.message}`, 'error');
+            });
+        }
+
+        function testCORS() {
+            log('Testing CORS headers...', 'info');
+            
+            fetch(window.location.href, { method: 'OPTIONS' })
+                .then(response => {
+                    log('CORS Headers:', 'info');
+                    for (let [key, value] of response.headers) {
+                        if (key.toLowerCase().includes('access-control')) {
+                            log(`${key}: ${value}`, 'success');
+                        }
+                    }
+                })
+                .catch(error => {
+                    log(`CORS test error: ${error.message}`, 'warning');
+                });
+        }
+
+        // Auto-load current project info on page load
+        window.addEventListener('load', function() {
+            log('Debug page loaded. Ready for testing.', 'success');
+            checkCurrentProject();
+        });
+    </script>
+</body>
+</html>

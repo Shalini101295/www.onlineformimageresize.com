@@ -1,24 +1,50 @@
-# Simple configuration for Excel Visualizer
-# Rename this file to .htaccess after uploading
+# Simple Excel Visualizer Configuration
 
-# Allow PHP execution
-AddType application/x-httpd-php .php
-
-# Prevent access to sensitive files
-<Files "*.txt">
-    Order deny,allow
-    Deny from all
+# Protect sensitive files
+<Files "secure_users.txt">
+    Require all denied
 </Files>
 
-<Files "*.log">
-    Order deny,allow
-    Deny from all
+<Files "auth_log.txt">
+    Require all denied
 </Files>
 
-<Files "*.sql">
-    Order deny,allow
-    Deny from all
+<Files "projects_index.txt">
+    Require all denied
 </Files>
 
-# Optional: Remove this section if it causes errors
-RewriteEngine On
+<Files "project_log.txt">
+    Require all denied
+</Files>
+
+<Files "*_log.txt">
+    Require all denied
+</Files>
+
+# Protect JSON metadata files
+<Files "*.json">
+    <RequireAll>
+        Require all denied
+    </RequireAll>
+</Files>
+
+# Allow everything else (including Excel files)
+# This ensures Excel files in user_projects are accessible
+<RequireAll>
+    Require all granted
+</RequireAll>
+
+# Set proper MIME types for Excel files
+<IfModule mod_mime.c>
+    AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet .xlsx
+    AddType application/vnd.ms-excel .xls
+</IfModule>
+
+# Enable CORS for Excel files
+<IfModule mod_headers.c>
+    <FilesMatch "\.(xlsx|xls)$">
+        Header always set Access-Control-Allow-Origin "*"
+        Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Header always set Access-Control-Allow-Headers "Origin, X-Requested-With, Content-Type, Accept"
+    </FilesMatch>
+</IfModule>
