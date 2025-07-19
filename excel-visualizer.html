@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced Excel Visualizer with Multi-Column Chart Comparison</title>
+    <link rel="stylesheet" href="css/excel-visualizer.css">
+    
+    <!-- External Libraries -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PptxGenJS/3.12.0/pptxgen.bundle.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Enhanced Excel Visualizer</h1>
+            <p>Upload Excel files and create interactive multi-column chart comparisons</p>
+        </header>
+
+        <!-- File Upload Section -->
+        <section class="file-upload-section">
+            <div class="upload-area">
+                <label for="excelFile" class="upload-label">
+                    <div class="upload-icon">📁</div>
+                    <div class="upload-text">Choose Excel File</div>
+                </label>
+                <input type="file" id="excelFile" accept=".xlsx,.xls" style="display: none;">
+            </div>
+        </section>
+
+        <!-- Filter Setup Section -->
+        <section class="filter-section" style="display: none;">
+            <h3>Setup Filters</h3>
+            <div class="filter-controls">
+                <div id="filterColumnSelect">
+                    <label>Select Columns to Filter:</label>
+                    <!-- Multi-select will be populated here -->
+                </div>
+                <button id="loadFilters" class="btn btn-primary">Load Filter Options</button>
+            </div>
+            
+            <div id="filterOptions" class="filter-options">
+                <!-- Filter checkboxes will be populated here -->
+            </div>
+        </section>
+
+        <!-- Column Selection Section -->
+        <section id="columnsContainer" class="columns-section" style="display: none;">
+            <h3>Chart Configuration</h3>
+            <div class="chart-controls">
+                <div class="control-group">
+                    <label for="columnSelect">Select Columns to Chart:</label>
+                    <select id="columnSelect" multiple>
+                        <!-- Options will be populated here -->
+                    </select>
+                </div>
+                
+                <div class="control-group">
+                    <label for="themeSelect">Chart Theme:</label>
+                    <select id="themeSelect">
+                        <option value="default">Default</option>
+                        <option value="pastel">Pastel</option>
+                        <option value="neon">Neon</option>
+                        <option value="dark">Dark</option>
+                    </select>
+                </div>
+                
+                <div class="action-buttons">
+                    <button id="generateChart" class="btn btn-success">Generate Charts</button>
+                    <button id="saveSettingsBtn" class="btn btn-info">Save Settings</button>
+                    <button id="exportPPT" class="btn btn-warning">Export to PowerPoint</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Charts Display Section -->
+        <section class="charts-section">
+            <div id="chartsWrapper" class="charts-wrapper">
+                <!-- Charts will be generated here -->
+            </div>
+        </section>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="Js/excel-visualizer.js"></script>
+</body>
+</html>
