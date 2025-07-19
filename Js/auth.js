@@ -114,7 +114,7 @@ function handleLogin(e) {
 
     // API call to server
     $.ajax({
-        url: 'auth_backend_simple.php',
+        url: 'auth_basic.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -186,7 +186,7 @@ function handleRegister(e) {
 
     // API call to server
     $.ajax({
-        url: 'auth_backend_simple.php',
+        url: 'auth_basic.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
