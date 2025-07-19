@@ -1,4 +1,4 @@
-# Excel Visualizer - Secure Project Management
+# Excel Visualizer - Enhanced File Access
 
 # Protect user authentication files
 <Files "secure_users.txt">
@@ -37,23 +37,17 @@
     Deny from all
 </Files>
 
-# Allow Excel files in user projects but protect other files
-<FilesMatch "^.*\.(xlsx|xls)$">
-    <RequireAll>
-        Require all granted
-    </RequireAll>
-</FilesMatch>
+# Allow Excel files in user_projects directory
+<LocationMatch "^/.*user_projects/.*\.(xlsx|xls)$">
+    Order allow,deny
+    Allow from all
+</LocationMatch>
 
-# Protect metadata and other files in user projects
-RedirectMatch 403 ^/.*user_projects/.*\.json$
-RedirectMatch 403 ^/.*user_projects/.*\.txt$
-RedirectMatch 403 ^/.*user_projects/.*\.log$
-
-# Protect metadata files
-<Files "project_metadata.json">
+# Protect other files in user_projects (metadata, configs, etc.)
+<LocationMatch "^/.*user_projects/.*\.(json|txt|log|php)$">
     Order deny,allow
     Deny from all
-</Files>
+</LocationMatch>
 
 # Allow PHP files to execute
 <Files "*.php">
@@ -94,6 +88,13 @@ RedirectMatch 403 ^/.*user_projects/.*\.log$
     Header always set X-Content-Type-Options nosniff
     Header always set X-Frame-Options SAMEORIGIN
     Header always set X-XSS-Protection "1; mode=block"
+    
+    # Allow CORS for Excel files from same origin
+    <FilesMatch "\.(xlsx|xls)$">
+        Header set Access-Control-Allow-Origin "*"
+        Header set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+        Header set Access-Control-Allow-Headers "Content-Type"
+    </FilesMatch>
 </IfModule>
 
 # Optional: Enable compression for better performance

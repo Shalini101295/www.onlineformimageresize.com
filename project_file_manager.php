@@ -228,9 +228,14 @@ function loadExcelData($data) {
         throw new Exception('User ID, Project ID, and filename are required');
     }
     
+    $project = findProjectInIndex($user_id, $project_id);
+    if (!$project) {
+        throw new Exception('Project not found');
+    }
+    
     $project_dir = findProjectDirectory($user_id, $project_id);
     if (!$project_dir) {
-        throw new Exception('Project not found');
+        throw new Exception('Project directory not found');
     }
     
     $file_path = $project_dir . '/' . $filename;
@@ -239,22 +244,31 @@ function loadExcelData($data) {
         throw new Exception('File not found');
     }
     
-    // Read file content and encode as base64
-    $file_content = file_get_contents($file_path);
-    if ($file_content === false) {
-        throw new Exception('Failed to read file');
-    }
+    // Create direct accessible file path
+    $relative_path = str_replace(getcwd() . '/', '', $file_path);
     
-    $base64_content = base64_encode($file_content);
-    
-    // Return file content directly
+    // Return direct file path for frontend to access
     echo json_encode([
         'success' => true,
-        'message' => 'File loaded successfully',
+        'message' => 'File path ready',
         'filename' => $filename,
-        'file_content' => $base64_content,
-        'file_size' => filesize($file_path)
+        'file_path' => $relative_path,
+        'file_size' => filesize($file_path),
+        'user_name' => $project['user_name'],
+        'project_name' => $project['name']
     ]);
+}
+
+function findProjectInIndex($user_id, $project_id) {
+    $projects = loadProjectsIndex();
+    
+    foreach ($projects as $project) {
+        if ($project['id'] === $project_id && $project['user_id'] === $user_id) {
+            return $project;
+        }
+    }
+    
+    return null;
 }
 
 // Helper functions
