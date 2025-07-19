@@ -15,12 +15,29 @@
 <body>
     <div class="container">
         <header>
-            <h1>Enhanced Excel Visualizer</h1>
-            <p>Upload Excel files and create interactive multi-column chart comparisons</p>
+            <div class="header-nav">
+                <button id="backToProjects" class="back-btn">← Back to Projects</button>
+                <div class="project-info">
+                    <h1 id="projectTitle">Excel Visualizer</h1>
+                    <p id="projectDescription">Interactive multi-column chart comparisons</p>
+                </div>
+                <div class="user-info">
+                    <span id="currentUserName">User</span>
+                    <button id="saveProjectBtn" class="save-btn">Save Project</button>
+                </div>
+            </div>
         </header>
 
-        <!-- File Upload Section -->
-        <section class="file-upload-section">
+        <!-- Project Status Bar -->
+        <div class="project-status" id="projectStatus" style="display: none;">
+            <div class="status-info">
+                <span class="file-name" id="currentFileName">No file loaded</span>
+                <span class="last-saved" id="lastSaved">Never saved</span>
+            </div>
+        </div>
+
+        <!-- File Upload Section (Hidden when project is loaded) -->
+        <section class="file-upload-section" id="fileUploadSection" style="display: none;">
             <div class="upload-area">
                 <label for="excelFile" class="upload-label">
                     <div class="upload-icon">📁</div>

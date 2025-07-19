@@ -15,6 +15,9 @@ const chartThemes = {
 };
 
 $(document).ready(function () {
+  // Check if user is logged in and project is selected
+  checkProjectAccess();
+  
   loadSavedColors();
   setupFileUpload();
   setupFilterLoader();
@@ -26,6 +29,10 @@ $(document).ready(function () {
   setupPPTExporter();
   setupMultiColumnToggle();
   setupThemeSelector();
+  setupProjectNavigation();
+  
+  // Load current project if available
+  loadCurrentProject();
 });
 
 function loadSavedColors() {
@@ -1137,4 +1144,298 @@ function getFilterSummary() {
     }
   });
   return activeFilters.length > 0 ? `Active filters: ${activeFilters.join(', ')}` : 'No filters applied';
+}
+
+// Project Integration Functions
+function checkProjectAccess() {
+  // Check if user is logged in
+  const currentUser = localStorage.getItem('currentUser');
+  if (!currentUser) {
+    alert('Please log in to access the visualizer');
+    window.location.href = 'index.html';
+    return;
+  }
+
+  // Check if project is selected
+  const currentProject = localStorage.getItem('currentProject');
+  if (!currentProject) {
+    alert('Please select a project to visualize');
+    window.location.href = 'index.html';
+    return;
+  }
+}
+
+function setupProjectNavigation() {
+  // Back to projects button
+  $('#backToProjects').on('click', function() {
+    if (confirm('Are you sure you want to go back? Any unsaved changes will be lost.')) {
+      window.location.href = 'index.html';
+    }
+  });
+
+  // Save project button
+  $('#saveProjectBtn').on('click', function() {
+    saveCurrentProject();
+  });
+
+  // Auto-save every 30 seconds
+  setInterval(autoSaveProject, 30000);
+}
+
+function loadCurrentProject() {
+  const projectData = localStorage.getItem('currentProject');
+  const userData = localStorage.getItem('currentUser');
+  
+  if (!projectData || !userData) {
+    window.location.href = 'index.html';
+    return;
+  }
+
+  const project = JSON.parse(projectData);
+  const user = JSON.parse(userData);
+
+  // Update UI with project info
+  $('#projectTitle').text(project.name);
+  $('#projectDescription').text(project.description || 'No description');
+  $('#currentUserName').text(user.name);
+  $('#currentFileName').text(project.fileName);
+  $('#lastSaved').text(project.updatedAt ? `Last saved: ${formatDateTime(project.updatedAt)}` : 'Never saved');
+
+  // Show project status bar
+  $('#projectStatus').show();
+
+  // Load Excel file from base64 data
+  if (project.fileData) {
+    loadProjectExcelFile(project.fileData, project.fileName);
+  } else {
+    // Show file upload if no data
+    $('#fileUploadSection').show();
+  }
+}
+
+function loadProjectExcelFile(base64Data, fileName) {
+  try {
+    // Convert base64 to binary data
+    const base64 = base64Data.split(',')[1];
+    const binaryString = atob(base64);
+    const bytes = new Uint8Array(binaryString.length);
+    
+    for (let i = 0; i < binaryString.length; i++) {
+      bytes[i] = binaryString.charCodeAt(i);
+    }
+
+    // Parse Excel file
+    const workbook = XLSX.read(bytes, { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    excelData = XLSX.utils.sheet_to_json(sheet);
+    
+    if (excelData.length > 0) {
+      allColumns = Object.keys(excelData[0]);
+      populateColumnSelectors(allColumns);
+      
+      // Load saved chart settings for this project
+      loadProjectSettings();
+      
+      // Show the filter and column sections
+      $('.filter-section').show();
+      $('#columnsContainer').show();
+      
+      // Update status
+      $('#currentFileName').text(fileName);
+      
+      showSuccessMessage(`Project "${fileName}" loaded successfully`);
+    }
+  } catch (error) {
+    console.error('Error loading project file:', error);
+    showErrorMessage('Error loading project file. Please try uploading a new file.');
+    $('#fileUploadSection').show();
+  }
+}
+
+function saveCurrentProject() {
+  const projectData = localStorage.getItem('currentProject');
+  if (!projectData) return;
+
+  const project = JSON.parse(projectData);
+  
+  // Update project with current chart configurations
+  project.chartSettings = saveChartSettings();
+  project.updatedAt = new Date().toISOString();
+
+  // Save to localStorage
+  localStorage.setItem('currentProject', JSON.stringify(project));
+
+  // Update projects list
+  const allProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+  const projectIndex = allProjects.findIndex(p => p.id === project.id);
+  
+  if (projectIndex !== -1) {
+    allProjects[projectIndex] = project;
+    localStorage.setItem('projects', JSON.stringify(allProjects));
+  }
+
+  // Update UI
+  $('#lastSaved').text(`Last saved: ${formatDateTime(project.updatedAt)}`);
+  
+  showSuccessMessage('Project saved successfully!');
+}
+
+function autoSaveProject() {
+  const projectData = localStorage.getItem('currentProject');
+  if (!projectData || Object.keys(chartRegistry).length === 0) return;
+
+  const project = JSON.parse(projectData);
+  project.chartSettings = saveChartSettings();
+  project.updatedAt = new Date().toISOString();
+
+  localStorage.setItem('currentProject', JSON.stringify(project));
+
+  // Update projects list silently
+  const allProjects = JSON.parse(localStorage.getItem('projects') || '[]');
+  const projectIndex = allProjects.findIndex(p => p.id === project.id);
+  
+  if (projectIndex !== -1) {
+    allProjects[projectIndex] = project;
+    localStorage.setItem('projects', JSON.stringify(allProjects));
+  }
+
+  // Update UI quietly
+  $('#lastSaved').text(`Auto-saved: ${formatDateTime(project.updatedAt)}`);
+}
+
+function saveChartSettings() {
+  const chartSettings = {
+    filterableColumns: filterableColumns,
+    selectedColumns: $('#columnSelect').val() || [],
+    theme: $('#themeSelect').val() || 'default',
+    charts: {},
+    filterSettings: {}
+  };
+
+  // Save chart configurations
+  Object.entries(chartRegistry).forEach(([canvasId, chart]) => {
+    if (chart && chart.config) {
+      const isMultiColumn = $(`.multi-column-checkbox[data-target="${canvasId}"]`).is(':checked');
+      const selectedMultiCols = isMultiColumn ? $(`.multi-column-select[data-target="${canvasId}"]`).val() : [];
+      
+      chartSettings.charts[canvasId] = {
+        type: chart.config.type,
+        isMultiColumn: isMultiColumn,
+        selectedColumns: selectedMultiCols,
+        dataLabels: chart.data.labels,
+        datasets: chart.data.datasets,
+        options: chart.config.options
+      };
+    }
+  });
+
+  // Save filter settings
+  filterableColumns.forEach(col => {
+    const filterId = `filter-${col.replace(/\s+/g, '_')}`;
+    const checked = $(`input[name="${filterId}"]:checked`).map(function() {
+      return $(this).val();
+    }).get();
+    chartSettings.filterSettings[col] = checked;
+  });
+
+  return chartSettings;
+}
+
+function loadProjectSettings() {
+  const projectData = localStorage.getItem('currentProject');
+  if (!projectData) return;
+
+  const project = JSON.parse(projectData);
+  if (!project.chartSettings) return;
+
+  const settings = project.chartSettings;
+
+  // Restore filter columns
+  if (settings.filterableColumns && settings.filterableColumns.length > 0) {
+    $('#filterColumns').val(settings.filterableColumns);
+    $('#loadFilters').click();
+    
+    // Wait for filters to load, then restore filter states
+    setTimeout(() => {
+      Object.entries(settings.filterSettings || {}).forEach(([col, checkedValues]) => {
+        const filterId = `filter-${col.replace(/\s+/g, '_')}`;
+        $(`input[name="${filterId}"]`).prop('checked', false);
+        checkedValues.forEach(value => {
+          $(`input[name="${filterId}"][value="${value}"]`).prop('checked', true);
+        });
+      });
+    }, 500);
+  }
+
+  // Restore theme
+  if (settings.theme) {
+    $('#themeSelect').val(settings.theme);
+  }
+
+  // Restore selected columns and generate charts
+  if (settings.selectedColumns && settings.selectedColumns.length > 0) {
+    $('#columnSelect').val(settings.selectedColumns);
+    $('#generateChart').click();
+
+    // Wait for charts to generate, then restore chart settings
+    setTimeout(() => {
+      Object.entries(settings.charts || {}).forEach(([canvasId, chartConfig]) => {
+        const chartTypeDropdown = $(`.chart-type[data-target="${canvasId}"]`);
+        if (chartTypeDropdown.length) {
+          chartTypeDropdown.val(chartConfig.type);
+          
+          if (chartConfig.isMultiColumn && chartConfig.selectedColumns) {
+            const multiToggle = $(`.multi-column-checkbox[data-target="${canvasId}"]`);
+            const multiSelect = $(`.multi-column-select[data-target="${canvasId}"]`);
+            
+            multiToggle.prop('checked', true);
+            $(`#${canvasId}-multi-controls`).show();
+            multiSelect.val(chartConfig.selectedColumns);
+            
+            // Trigger multi-column chart render
+            updateMultiColumnChart(canvasId);
+          } else {
+            // Trigger single chart render
+            chartTypeDropdown.trigger('change');
+          }
+        }
+      });
+    }, 1000);
+  }
+}
+
+// Utility Functions for Project Management
+function formatDateTime(dateString) {
+  const date = new Date(dateString);
+  return date.toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+function showSuccessMessage(message) {
+  // Create or update success message
+  let $msg = $('#project-success-msg');
+  if (!$msg.length) {
+    $msg = $('<div id="project-success-msg" class="project-message success"></div>');
+    $('body').append($msg);
+  }
+  
+  $msg.text(message).show();
+  setTimeout(() => $msg.hide(), 3000);
+}
+
+function showErrorMessage(message) {
+  // Create or update error message
+  let $msg = $('#project-error-msg');
+  if (!$msg.length) {
+    $msg = $('<div id="project-error-msg" class="project-message error"></div>');
+    $('body').append($msg);
+  }
+  
+  $msg.text(message).show();
+  setTimeout(() => $msg.hide(), 4000);
 }

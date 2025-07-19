@@ -27,19 +27,99 @@ body {
 header {
     background: linear-gradient(135deg, #2c3e50, #3498db);
     color: white;
-    padding: 30px;
+    padding: 20px 30px;
+}
+
+.header-nav {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+.back-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s ease;
+    text-decoration: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.project-info {
     text-align: center;
+    flex: 1;
+    margin: 0 20px;
 }
 
-header h1 {
-    font-size: 2.5em;
-    margin-bottom: 10px;
-    font-weight: 300;
+.project-info h1 {
+    font-size: 2em;
+    margin-bottom: 5px;
+    font-weight: 500;
 }
 
-header p {
-    font-size: 1.1em;
+.project-info p {
+    font-size: 1em;
     opacity: 0.9;
+}
+
+.user-info {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-weight: 500;
+}
+
+.save-btn {
+    background: rgba(39, 174, 96, 0.8);
+    color: white;
+    border: 1px solid rgba(39, 174, 96, 1);
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.3s ease;
+}
+
+.save-btn:hover {
+    background: rgba(39, 174, 96, 1);
+}
+
+/* Project Status Bar */
+.project-status {
+    background: #f8f9fa;
+    border-bottom: 1px solid #e9ecef;
+    padding: 15px 30px;
+}
+
+.status-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1400px;
+    margin: 0 auto;
+    font-size: 0.9em;
+    color: #6c757d;
+}
+
+.file-name {
+    font-weight: 500;
+    color: #495057;
+}
+
+.last-saved {
+    font-style: italic;
 }
 
 /* Section Styles */
@@ -501,11 +581,36 @@ canvas {
     }
     
     header {
-        padding: 20px;
+        padding: 15px 20px;
     }
     
-    header h1 {
-        font-size: 2em;
+    .header-nav {
+        flex-direction: column;
+        gap: 15px;
+        text-align: center;
+    }
+    
+    .project-info {
+        margin: 0;
+    }
+    
+    .project-info h1 {
+        font-size: 1.8em;
+    }
+    
+    .user-info {
+        justify-content: center;
+        flex-wrap: wrap;
+    }
+    
+    .project-status {
+        padding: 10px 20px;
+    }
+    
+    .status-info {
+        flex-direction: column;
+        gap: 5px;
+        text-align: center;
     }
     
     section {
@@ -585,6 +690,32 @@ canvas {
 @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
+}
+
+/* Project Messages */
+.project-message {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    border-radius: 8px;
+    font-weight: 500;
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.1);
+    z-index: 1001;
+    animation: slideIn 0.3s ease;
+    display: none;
+}
+
+.project-message.success {
+    background: #d4edda;
+    color: #155724;
+    border: 1px solid #c3e6cb;
+}
+
+.project-message.error {
+    background: #f8d7da;
+    color: #721c24;
+    border: 1px solid #f5c6cb;
 }
 
 /* Utility Classes */
