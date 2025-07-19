@@ -1,16 +1,29 @@
-# Minimal .htaccess for Excel Visualizer
-# Only essential rules to avoid 403 errors
+# Minimal .htaccess - Allow almost everything
 
-# Allow access to PHP files
-<Files "*.php">
-    Allow from all
-</Files>
-
-# Protect data files only
-<Files "users_data.txt">
+# Only protect the most sensitive files
+<Files "secure_users.txt">
     Deny from all
 </Files>
 
-<Files "debug.log">
+<Files "projects_index.txt">
     Deny from all
 </Files>
+
+<Files "*_log.txt">
+    Deny from all
+</Files>
+
+# Allow everything else including:
+# - Excel files (.xlsx, .xls)
+# - Images (favicon.ico, .png, .jpg)
+# - All other web files
+
+# Set MIME types
+AddType application/vnd.openxmlformats-officedocument.spreadsheetml.sheet .xlsx
+AddType application/vnd.ms-excel .xls
+AddType image/x-icon .ico
+
+# Basic CORS for all files
+Header always set Access-Control-Allow-Origin "*"
+Header always set Access-Control-Allow-Methods "GET, POST, OPTIONS"
+Header always set Access-Control-Allow-Headers "Content-Type"
