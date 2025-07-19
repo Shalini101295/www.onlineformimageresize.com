@@ -1,0 +1,50 @@
+# Secure Excel Visualizer Configuration
+
+# Protect user data files from direct access
+<Files "secure_users.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "user_projects.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "auth_log.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "login_attempts.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Block access to all .txt files (uncomment if needed)
+# <Files "*.txt">
+#     Order deny,allow
+#     Deny from all
+# </Files>
+
+# Allow PHP files to execute
+<Files "*.php">
+    Allow from all
+</Files>
+
+# Prevent access to config and backup files
+<Files "*.bak">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "*.old">
+    Order deny,allow
+    Deny from all
+</Files>
+
+# Basic security headers (optional)
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options nosniff
+    Header always set X-Frame-Options SAMEORIGIN
+</IfModule>
