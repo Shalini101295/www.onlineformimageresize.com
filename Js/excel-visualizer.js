@@ -1,10 +1,11 @@
 // Enhanced Excel Visualizer with Multi-Column Chart Comparison
 
-let excelData = [];
+// Global variables - accessible to enhanced upload system
+window.excelData = [];
 let filterableColumns = [];
 const colorPreferences = {};
 const chartRegistry = {};
-let allColumns = [];
+window.allColumns = [];
 
 
 const chartThemes = {
@@ -19,7 +20,12 @@ $(document).ready(function () {
   checkProjectAccess();
   
   loadSavedColors();
-  setupFileUpload();
+  
+  // Only setup old file upload if enhanced upload is not available
+  if (typeof initializeEnhancedUpload !== 'function') {
+    setupFileUpload();
+  }
+  
   setupFilterLoader();
   setupChartGenerator();
   setupChartTypeSwitcher();
@@ -49,10 +55,10 @@ function setupFileUpload() {
       const data = new Uint8Array(event.target.result);
       const workbook = XLSX.read(data, { type: 'array' });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      excelData = XLSX.utils.sheet_to_json(sheet);
-      if (excelData.length > 0) {
-        allColumns = Object.keys(excelData[0]);
-        populateColumnSelectors(allColumns);
+              window.excelData = XLSX.utils.sheet_to_json(sheet);
+        if (window.excelData.length > 0) {
+          window.allColumns = Object.keys(window.excelData[0]);
+          populateColumnSelectors(window.allColumns);
         loadSettingsForFile(excelFileName); // 👈 Auto-load settings if available
         
         // Show the filter and column sections
@@ -79,7 +85,7 @@ function setupFilterLoader() {
 
     $('#filterOptions').empty();
     filterableColumns.forEach(col => {
-      const values = [...new Set(excelData.map(row => row[col]))];
+      const values = [...new Set(window.excelData.map(row => row[col]))];
       const filterId = `filter-${col.replace(/\s+/g, '_')}`;
 
       let html = `<div><strong>${col}</strong><br>`;
@@ -239,7 +245,7 @@ $('#saveSettingsBtn').click(function () {
 
 
 function applyFilters() {
-  return excelData.filter(row => {
+  return window.excelData.filter(row => {
     return filterableColumns.every(col => {
       const filterId = `filter-${col.replace(/\s+/g, '_')}`;
       const checked = $(`input[name="${filterId}"]:checked`).map(function () {
@@ -1169,7 +1175,7 @@ function setupProjectNavigation() {
   // Back to projects button
   $('#backToProjects').on('click', function() {
     if (confirm('Are you sure you want to go back? Any unsaved changes will be lost.')) {
-      window.location.href = 'index.html';
+      window.location.href = 'projects_dashboard.html';
     }
   });
 
@@ -1227,11 +1233,11 @@ function loadProjectExcelFile(base64Data, fileName) {
     // Parse Excel file
     const workbook = XLSX.read(bytes, { type: 'array' });
     const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    excelData = XLSX.utils.sheet_to_json(sheet);
-    
-    if (excelData.length > 0) {
-      allColumns = Object.keys(excelData[0]);
-      populateColumnSelectors(allColumns);
+          window.excelData = XLSX.utils.sheet_to_json(sheet);
+      
+      if (window.excelData.length > 0) {
+              window.allColumns = Object.keys(window.excelData[0]);
+        populateColumnSelectors(window.allColumns);
       
       // Load saved chart settings for this project
       loadProjectSettings();

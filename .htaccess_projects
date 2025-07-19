@@ -27,6 +27,16 @@
     Deny from all
 </Files>
 
+<Files "file_upload_log.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
+<Files "file_download_log.txt">
+    Order deny,allow
+    Deny from all
+</Files>
+
 # Protect user project directories from direct access
 RedirectMatch 403 ^/.*user_projects/.*$
 
