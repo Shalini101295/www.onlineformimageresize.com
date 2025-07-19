@@ -151,8 +151,59 @@ function formatFileSize(bytes) {
 $(document).ready(function() {
     if ($('#projectFilesList').length > 0) {
         console.log('🚀 Running quick fix file loader...');
+        
+        // First check if we have manually saved project data
+        const quickFixProjects = localStorage.getItem('quickFixProjects');
+        if (quickFixProjects) {
+            console.log('📁 Found manually saved projects, using those...');
+            try {
+                const projects = JSON.parse(quickFixProjects);
+                displayQuickFixFiles(projects);
+                return;
+            } catch (e) {
+                console.error('Error parsing saved projects:', e);
+            }
+        }
+        
+        // Otherwise try automatic detection
         setTimeout(quickFixLoadFiles, 1000); // Give page time to load
     }
 });
+
+// Add manual override function
+function forceDirectFileLoad() {
+    console.log('🔧 Force loading known file...');
+    const knownFile = 'user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611/250720_New.xlsx';
+    quickLoadExcelFile('user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611', '250720_New.xlsx');
+}
+
+// Add debug button to the page
+function addDebugButton() {
+    const filesList = $('#projectFilesList');
+    if (filesList.length > 0) {
+        filesList.html(`
+            <div style="text-align: center; padding: 20px;">
+                <h3>🔧 Debug File Loading</h3>
+                <p>If files aren't appearing automatically, try these options:</p>
+                <button onclick="quickFixLoadFiles()" style="background: #28a745; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer;">
+                    🔄 Retry Auto Scan
+                </button>
+                <button onclick="forceDirectFileLoad()" style="background: #dc3545; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer;">
+                    📊 Load Known File
+                </button>
+                <button onclick="window.open('test_quick_fix.html', '_blank')" style="background: #007bff; color: white; border: none; padding: 10px 20px; margin: 5px; border-radius: 4px; cursor: pointer;">
+                    🔍 Open Debug Tool
+                </button>
+            </div>
+        `);
+    }
+}
+
+// Show debug button after a delay if no files are found
+setTimeout(() => {
+    if ($('#projectFilesList').text().includes('No Excel files found')) {
+        addDebugButton();
+    }
+}, 3000);
 
 console.log('🔧 Quick fix file loader script loaded. Call quickFixLoadFiles() to scan for files.');

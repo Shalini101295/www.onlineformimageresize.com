@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Quick Fix</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 15px; margin: 15px 0; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        pre { background: #f1f3f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
+        .success { border-left: 4px solid #28a745; }
+        .error { border-left: 4px solid #dc3545; }
+    </style>
+</head>
+<body>
+    <h1>🔧 Quick Fix Debugging</h1>
+
+    <div class="test">
+        <h3>💾 Current Storage</h3>
+        <button onclick="showLocalStorage()">Show localStorage</button>
+        <div id="localStorageResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>🔍 Test File Scanner</h3>
+        <button onclick="testQuickFix()">Test Quick File Scanner</button>
+        <div id="quickFixResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>📁 Direct File Test</h3>
+        <button onclick="testDirectFile()">Test Direct File Access</button>
+        <div id="directFileResult"></div>
+    </div>
+
+    <div class="test">
+        <h3>🛠️ Manual Fix</h3>
+        <p>If automatic detection fails, enter your details manually:</p>
+        <input type="text" id="manualUserId" placeholder="Enter your user ID (e.g., shashank_sinha_0_4206)" style="width: 300px; padding: 5px;">
+        <br><br>
+        <button onclick="manualFileScan()">Manual File Scan</button>
+        <div id="manualResult"></div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script>
+        function showLocalStorage() {
+            const resultDiv = document.getElementById('localStorageResult');
+            const currentUser = localStorage.getItem('currentUser');
+            const currentProject = localStorage.getItem('currentProject');
+            
+            resultDiv.innerHTML = `
+                <h4>Current User:</h4>
+                <pre>${currentUser || 'Not found'}</pre>
+                <h4>Current Project:</h4>
+                <pre>${currentProject || 'Not found'}</pre>
+            `;
+        }
+
+        function testQuickFix() {
+            const resultDiv = document.getElementById('quickFixResult');
+            resultDiv.innerHTML = '<p>Testing quick fix...</p>';
+            
+            // Get user data
+            const userData = localStorage.getItem('currentUser');
+            if (!userData) {
+                resultDiv.innerHTML = '<p style="color: red;">❌ No user data in localStorage</p>';
+                return;
+            }
+            
+            const user = JSON.parse(userData);
+            const userId = user.id || user.username;
+            
+            console.log('Testing with user ID:', userId);
+            
+            // Test the quick file loader
+            $.ajax({
+                url: 'quick_file_loader.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'scan_user_files',
+                    user_id: userId
+                }),
+                success: function(response) {
+                    console.log('Quick fix response:', response);
+                    resultDiv.innerHTML = `
+                        <h4>Quick Fix Response:</h4>
+                        <pre>${JSON.stringify(response, null, 2)}</pre>
+                    `;
+                },
+                error: function(xhr, status, error) {
+                    console.error('Quick fix error:', error);
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error}</p>`;
+                }
+            });
+        }
+
+        function testDirectFile() {
+            const resultDiv = document.getElementById('directFileResult');
+            const knownFilePath = 'user_projects/shashank_sinha_0_4206/Project_1_proj_1752924401_4611/250720_New.xlsx';
+            
+            resultDiv.innerHTML = `<p>Testing direct access to: ${knownFilePath}</p>`;
+            
+            fetch(knownFilePath)
+                .then(response => {
+                    if (response.ok) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <p>✅ Direct file access works!</p>
+                                <p>File size: ${response.headers.get('content-length') || 'Unknown'}</p>
+                                <button onclick="loadKnownFile('${knownFilePath}')">Load This File</button>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `<p style="color: red;">❌ Direct access failed: ${response.status}</p>`;
+                    }
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Direct access error: ${error.message}</p>`;
+                });
+        }
+
+        function manualFileScan() {
+            const resultDiv = document.getElementById('manualResult');
+            const userId = document.getElementById('manualUserId').value.trim();
+            
+            if (!userId) {
+                resultDiv.innerHTML = '<p style="color: red;">Please enter a user ID</p>';
+                return;
+            }
+            
+            resultDiv.innerHTML = '<p>Scanning for user: ' + userId + '</p>';
+            
+            $.ajax({
+                url: 'quick_file_loader.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'scan_user_files',
+                    user_id: userId
+                }),
+                success: function(response) {
+                    console.log('Manual scan response:', response);
+                    if (response.success && response.projects && response.projects.length > 0) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <h4>✅ Found ${response.projects.length} project(s)!</h4>
+                                <pre>${JSON.stringify(response, null, 2)}</pre>
+                                <button onclick="useManualResults(${JSON.stringify(response).replace(/"/g, '&quot;')})">Use These Files</button>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="error">
+                                <h4>❌ No files found</h4>
+                                <pre>${JSON.stringify(response, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error}</p>`;
+                }
+            });
+        }
+
+        function loadKnownFile(filePath) {
+            console.log('Loading known file:', filePath);
+            
+            fetch(filePath)
+                .then(response => response.arrayBuffer())
+                .then(buffer => {
+                    const workbook = XLSX.read(buffer, {type: 'array'});
+                    console.log('✅ File loaded! Sheets:', workbook.SheetNames);
+                    alert('✅ Excel file loaded successfully! Sheets: ' + workbook.SheetNames.join(', '));
+                })
+                .catch(error => {
+                    console.error('Failed to load file:', error);
+                    alert('Failed to load file: ' + error.message);
+                });
+        }
+
+        function useManualResults(response) {
+            // Store the found projects in localStorage for the main app to use
+            localStorage.setItem('quickFixProjects', JSON.stringify(response.projects));
+            alert('✅ File data saved! Go back to the Excel Visualizer and it should show your files.');
+        }
+
+        // Auto-populate user ID if we can guess it
+        window.addEventListener('load', function() {
+            const userData = localStorage.getItem('currentUser');
+            if (userData) {
+                try {
+                    const user = JSON.parse(userData);
+                    const userId = user.id || user.username;
+                    if (userId) {
+                        document.getElementById('manualUserId').value = userId;
+                    }
+                } catch (e) {
+                    console.error('Error parsing user data:', e);
+                }
+            }
+        });
+    </script>
+</body>
+</html>
