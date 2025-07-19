@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Authentication</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Debug Authentication Test</h1>
+    
+    <div id="results" style="background: #f0f0f0; padding: 20px; margin: 20px 0;"></div>
+    
+    <h2>Test Registration</h2>
+    <form id="testRegisterForm">
+        <input type="text" id="testName" placeholder="Name" value="Test User" required><br><br>
+        <input type="email" id="testEmail" placeholder="Email" value="test@example.com" required><br><br>
+        <input type="password" id="testPassword" placeholder="Password" value="password123" required><br><br>
+        <button type="submit">Test Register</button>
+    </form>
+    
+    <h2>Test Login</h2>
+    <form id="testLoginForm">
+        <input type="email" id="testLoginEmail" placeholder="Email" value="test@example.com" required><br><br>
+        <input type="password" id="testLoginPassword" placeholder="Password" value="password123" required><br><br>
+        <button type="submit">Test Login</button>
+    </form>
+
+    <script>
+        function log(message) {
+            $('#results').append('<p>' + new Date().toLocaleTimeString() + ': ' + message + '</p>');
+            console.log(message);
+        }
+
+        $('#testRegisterForm').on('submit', function(e) {
+            e.preventDefault();
+            log('Testing registration...');
+            
+            const data = {
+                action: 'register',
+                name: $('#testName').val(),
+                email: $('#testEmail').val(),
+                password: $('#testPassword').val()
+            };
+            
+            log('Sending data: ' + JSON.stringify(data));
+            
+            $.ajax({
+                url: 'auth_basic.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    log('SUCCESS: ' + JSON.stringify(response));
+                },
+                error: function(xhr, status, error) {
+                    log('ERROR: ' + status + ' - ' + error);
+                    log('Response: ' + xhr.responseText);
+                    log('Status Code: ' + xhr.status);
+                }
+            });
+        });
+
+        $('#testLoginForm').on('submit', function(e) {
+            e.preventDefault();
+            log('Testing login...');
+            
+            const data = {
+                action: 'login',
+                email: $('#testLoginEmail').val(),
+                password: $('#testLoginPassword').val()
+            };
+            
+            log('Sending data: ' + JSON.stringify(data));
+            
+            $.ajax({
+                url: 'auth_basic.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(data),
+                success: function(response) {
+                    log('SUCCESS: ' + JSON.stringify(response));
+                },
+                error: function(xhr, status, error) {
+                    log('ERROR: ' + status + ' - ' + error);
+                    log('Response: ' + xhr.responseText);
+                    log('Status Code: ' + xhr.status);
+                }
+            });
+        });
+
+        // Test if auth_basic.php is accessible
+        log('Page loaded. Testing auth_basic.php accessibility...');
+        $.get('auth_basic.php', function(data) {
+            log('GET test result: ' + JSON.stringify(data));
+        }).fail(function(xhr) {
+            log('GET test failed: ' + xhr.status + ' - ' + xhr.statusText);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,64 @@
+<!-- Add this script before </body> tag in your index.html -->
+<script>
+// Quick authentication fix
+$(document).ready(function() {
+    console.log('Authentication fix loaded');
+    
+    // Test if auth_basic.php is accessible
+    $.get('auth_basic.php').fail(function(xhr) {
+        console.log('PHP backend status:', xhr.status);
+    });
+    
+    // Fix register form
+    $('#registerForm').off('submit').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = {
+            name: $('#registerName').val(),
+            email: $('#registerEmail').val(),
+            password: $('#registerPassword').val(),
+            confirmPassword: $('#confirmPassword').val(),
+            acceptTerms: $('#acceptTerms').is(':checked')
+        };
+        
+        console.log('Registration attempt:', formData);
+        
+        // Validation
+        if (!formData.name || !formData.email || !formData.password) {
+            alert('Please fill all fields');
+            return;
+        }
+        
+        if (formData.password !== formData.confirmPassword) {
+            alert('Passwords do not match');
+            return;
+        }
+        
+        if (!formData.acceptTerms) {
+            alert('Please accept terms');
+            return;
+        }
+        
+        // API call
+        $.ajax({
+            url: 'auth_basic.php',
+            method: 'POST',
+            contentType: 'application/json',
+            data: JSON.stringify({
+                action: 'register',
+                name: formData.name,
+                email: formData.email,
+                password: formData.password
+            }),
+            success: function(response) {
+                console.log('Success:', response);
+                alert('Registration successful!');
+            },
+            error: function(xhr, status, error) {
+                console.error('Error:', xhr.status, error);
+                alert('Registration failed: ' + error);
+            }
+        });
+    });
+});
+</script>
