@@ -37,9 +37,10 @@
 
     <div class="test">
         <h3>🛠️ Manual Fix</h3>
-        <p>If automatic detection fails, enter your details manually:</p>
+        <p>If automatic detection fails, try these options:</p>
+        <button onclick="scanAllFiles()" style="background: #28a745; margin: 5px;">🔍 Scan All Files (Recommended)</button>
+        <br>
         <input type="text" id="manualUserId" placeholder="Enter your user ID (e.g., shashank_sinha_0_4206)" style="width: 300px; padding: 5px;">
-        <br><br>
         <button onclick="manualFileScan()">Manual File Scan</button>
         <div id="manualResult"></div>
     </div>
@@ -182,6 +183,42 @@
                     console.error('Failed to load file:', error);
                     alert('Failed to load file: ' + error.message);
                 });
+        }
+
+        function scanAllFiles() {
+            const resultDiv = document.getElementById('manualResult');
+            resultDiv.innerHTML = '<p>Scanning all files in user_projects directory...</p>';
+            
+            $.ajax({
+                url: 'quick_file_loader.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'scan_all_files'
+                }),
+                success: function(response) {
+                    console.log('Scan all response:', response);
+                    if (response.success && response.projects && response.projects.length > 0) {
+                        resultDiv.innerHTML = `
+                            <div class="success">
+                                <h4>✅ Found ${response.projects.length} project(s) with Excel files!</h4>
+                                <pre>${JSON.stringify(response, null, 2)}</pre>
+                                <button onclick="useManualResults(${JSON.stringify(response).replace(/"/g, '&quot;')})">Use These Files</button>
+                            </div>
+                        `;
+                    } else {
+                        resultDiv.innerHTML = `
+                            <div class="error">
+                                <h4>❌ No Excel files found anywhere</h4>
+                                <pre>${JSON.stringify(response, null, 2)}</pre>
+                            </div>
+                        `;
+                    }
+                },
+                error: function(xhr, status, error) {
+                    resultDiv.innerHTML = `<p style="color: red;">❌ Error: ${error}</p>`;
+                }
+            });
         }
 
         function useManualResults(response) {
