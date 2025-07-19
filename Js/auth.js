@@ -114,7 +114,7 @@ function handleLogin(e) {
 
     // API call to server
     $.ajax({
-        url: 'auth_basic.php',
+        url: 'auth_proper.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -131,9 +131,9 @@ function handleLogin(e) {
                     localStorage.setItem('rememberUser', 'true');
                 }
                 
-                showMessage('Login successful!', 'success');
+                showMessage('Login successful! Redirecting to your projects...', 'success');
                 setTimeout(() => {
-                    showLandingPage();
+                    window.location.href = 'projects_dashboard.html';
                 }, 1000);
             } else {
                 showMessage(response.message || 'Login failed', 'error');
@@ -186,7 +186,7 @@ function handleRegister(e) {
 
     // API call to server
     $.ajax({
-        url: 'auth_basic.php',
+        url: 'auth_proper.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
@@ -200,9 +200,9 @@ function handleRegister(e) {
                 currentUser = response.user;
                 localStorage.setItem('currentUser', JSON.stringify(currentUser));
                 
-                showMessage('Account created successfully!', 'success');
+                showMessage('Account created successfully! Redirecting to your projects...', 'success');
                 setTimeout(() => {
-                    showLandingPage();
+                    window.location.href = 'projects_dashboard.html';
                 }, 1000);
             } else {
                 showMessage(response.message || 'Registration failed', 'error');
