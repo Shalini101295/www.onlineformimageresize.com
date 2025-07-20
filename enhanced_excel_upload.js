@@ -364,7 +364,8 @@ function loadProjectFiles() {
         data: JSON.stringify({
             action: 'scan_user_files',
             user_id: userId,
-            filter_project: projectName
+            filter_project: projectName,
+            filter_project_id: currentProject.id
         }),
         success: function(response) {
             if (response.success && response.projects && response.projects.length > 0) {

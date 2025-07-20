@@ -18,10 +18,12 @@ function quickFixLoadFiles() {
     // Get current project for filtering
     const projectData = localStorage.getItem('currentProject');
     let currentProjectName = null;
+    let currentProjectId = null;
     if (projectData) {
         try {
             const currentProject = JSON.parse(projectData);
             currentProjectName = currentProject.name;
+            currentProjectId = currentProject.id;
         } catch (e) {
             console.error('Error parsing project data:', e);
         }
@@ -38,7 +40,8 @@ function quickFixLoadFiles() {
         data: JSON.stringify({
             action: 'scan_user_files',
             user_id: userId,
-            filter_project: currentProjectName
+            filter_project: currentProjectName,
+            filter_project_id: currentProjectId
         }),
         success: function(response) {
             console.log('📁 File scan response:', response);

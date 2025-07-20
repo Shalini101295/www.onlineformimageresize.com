@@ -22,9 +22,10 @@ try {
     $action = $input['action'] ?? '';
     $user_id = $input['user_id'] ?? '';
     $filter_project = $input['filter_project'] ?? null;
+    $filter_project_id = $input['filter_project_id'] ?? null;
     
     if ($action === 'scan_user_files') {
-        scanUserFiles($user_id, $filter_project);
+        scanUserFiles($user_id, $filter_project, $filter_project_id);
     } elseif ($action === 'scan_all_files') {
         scanAllFiles();
     } else {
@@ -38,7 +39,7 @@ try {
     ]);
 }
 
-function scanUserFiles($user_id, $filter_project = null) {
+function scanUserFiles($user_id, $filter_project = null, $filter_project_id = null) {
     if (empty($user_id)) {
         throw new Exception('User ID is required');
     }
@@ -114,11 +115,61 @@ function scanUserFiles($user_id, $filter_project = null) {
                     if (!empty($project_files)) {
                         // Apply project filter if specified
                         $include_project = true;
-                        if ($filter_project !== null && !empty($filter_project)) {
-                            $include_project = (
-                                strpos(strtolower($project_dir), strtolower($filter_project)) !== false ||
-                                strpos(strtolower($filter_project), strtolower($project_dir)) !== false
-                            );
+                        
+                        // Check project metadata for more accurate filtering
+                        $metadata_file = $project_path . '/project_metadata.json';
+                        $project_metadata = null;
+                        if (file_exists($metadata_file)) {
+                            $metadata_content = file_get_contents($metadata_file);
+                            $project_metadata = json_decode($metadata_content, true);
+                        }
+                        
+                        if (($filter_project !== null && !empty($filter_project)) || 
+                            ($filter_project_id !== null && !empty($filter_project_id))) {
+                            
+                            $include_project = false;
+                            
+                            // Try project ID match first (most accurate)
+                            if ($filter_project_id !== null && $project_metadata && isset($project_metadata['id'])) {
+                                if ($project_metadata['id'] === $filter_project_id) {
+                                    $include_project = true;
+                                    error_log("Project Filter: ID MATCH '$filter_project_id' = '$project_dir'");
+                                }
+                            }
+                            
+                            // If no ID match, try name matching
+                            if (!$include_project && $filter_project !== null) {
+                                $project_dir_lower = strtolower($project_dir);
+                                $filter_project_lower = strtolower($filter_project);
+                                
+                                // Check metadata name first
+                                if ($project_metadata && isset($project_metadata['name'])) {
+                                    $metadata_name_lower = strtolower($project_metadata['name']);
+                                    if ($metadata_name_lower === $filter_project_lower) {
+                                        $include_project = true;
+                                        error_log("Project Filter: METADATA NAME MATCH '$filter_project' = '$project_dir'");
+                                    }
+                                }
+                                
+                                // If no metadata match, try directory name matching (more restrictive)
+                                if (!$include_project) {
+                                    // Only exact matches or very specific patterns
+                                    $include_project = (
+                                        // Exact match
+                                        $project_dir_lower === $filter_project_lower ||
+                                        // Directory contains filter AND filter is substantial (>3 chars)
+                                        (strlen($filter_project) > 3 && strpos($project_dir_lower, $filter_project_lower) !== false) ||
+                                        // Filter contains directory name AND directory name is substantial
+                                        (strlen($project_dir) > 3 && strpos($filter_project_lower, $project_dir_lower) !== false)
+                                    );
+                                    
+                                    if ($include_project) {
+                                        error_log("Project Filter: DIRECTORY NAME MATCH '$filter_project' = '$project_dir'");
+                                    } else {
+                                        error_log("Project Filter: NO MATCH '$filter_project' vs '$project_dir'");
+                                    }
+                                }
+                            }
                         }
                         
                         if ($include_project) {
