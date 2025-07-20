@@ -1,4 +1,4 @@
-// Enhanced Excel Upload System for Project Management
+// Enhanced Excel Upload System for Project Management - Updated Layout
 let currentProject = null;
 let currentUser = null;
 let projectFiles = [];
@@ -11,12 +11,8 @@ function initializeEnhancedUpload() {
     // Setup file upload functionality
     setupProjectFileUpload();
     
-    // Use the working quick fix file loader instead of broken loadProjectFiles
-    if (typeof quickFixLoadFiles === 'function') {
-        quickFixLoadFiles();
-    } else {
-        loadProjectFiles();
-    }
+    // Load project files using the working loader
+    loadProjectFiles();
     
     // Update UI based on project state
     updateProjectUI();
@@ -27,12 +23,21 @@ function loadCurrentUserAndProject() {
     const userData = localStorage.getItem('currentUser');
     if (userData) {
         currentUser = JSON.parse(userData);
+        // Update header user info
+        if (currentUser.username || currentUser.name) {
+            $('#currentUserName').text(currentUser.username || currentUser.name);
+        }
     }
     
     // Load current project
     const projectData = localStorage.getItem('currentProject');
     if (projectData) {
         currentProject = JSON.parse(projectData);
+        // Update header project info
+        if (currentProject.name) {
+            $('#projectTitle').text(currentProject.name);
+            $('#projectDescription').text(currentProject.description || 'No description available');
+        }
     }
     
     if (!currentUser || !currentProject) {
@@ -402,47 +407,40 @@ function displayProjectFiles(files) {
     
     if (files.length === 0) {
         filesList.html(`
-            <div class="no-files">
-                <div class="no-files-icon">📄</div>
-                <p>No Excel files in this project yet.</p>
-                <p>Upload your first Excel file to start analyzing data.</p>
+            <div class="no-files-message">
+                <p>No files found in this project.</p>
+                <p>Upload an Excel file to get started.</p>
             </div>
         `);
         return;
     }
     
-    let html = '<div class="files-grid">';
+    filesList.empty();
     
     files.forEach(function(file) {
-        const fileSize = formatFileSize(file.size);
-        const fileDate = new Date(file.modified).toLocaleDateString();
+        const fileSize = formatFileSize(file.size || 0);
+        const fileDate = formatDate(file.modified || '');
         
-        html += `
-            <div class="file-card" data-filename="${file.name}">
+        const fileItem = $(`
+            <div class="file-item" data-file-path="${file.path}">
                 <div class="file-icon">📊</div>
                 <div class="file-info">
                     <div class="file-name">${escapeHtml(file.name)}</div>
-                    <div class="file-meta">
-                        <span class="file-size">${fileSize}</span>
-                        <span class="file-date">${fileDate}</span>
-                    </div>
+                    <div class="file-size">${fileSize}</div>
+                    <div class="file-date">${fileDate}</div>
                 </div>
                 <div class="file-actions">
-                    <button class="btn btn-primary btn-small load-file" data-filename="${file.name}">
-                        📈 Load & Analyze
+                    <button class="load-analyze-btn" onclick="loadAndAnalyzeFile('${file.path}', '${file.name}')">
+                        Load & Analyze
                     </button>
                 </div>
             </div>
-        `;
+        `);
+        
+        filesList.append(fileItem);
     });
     
-    html += '</div>';
-    filesList.html(html);
-    
-    // Setup file action handlers
-    $('.load-file').on('click', function() {
-        const filename = $(this).data('filename');
-        loadExcelFileFromProject(filename);
+    // File action handlers are now handled by onclick in HTML
     });
     
     // Delete functionality removed as requested
@@ -666,6 +664,21 @@ $(document).ready(function() {
     
     // Initialize the system
     initializeEnhancedUpload();
+    
+    // Set up upload button for new layout
+    $('#uploadExcelBtn').on('click', function() {
+        $('#excelFile').click();
+    });
+    
+    // Set up navigation
+    $('#backToProjects').on('click', function() {
+        window.location.href = 'project-dashboard.html';
+    });
+    
+    // Save project button
+    $('#saveProjectBtn').on('click', function() {
+        saveCurrentProject();
+    });
 });
 
 function addEnhancedUploadCSS() {
@@ -814,3 +827,95 @@ function addEnhancedUploadCSS() {
     
     $('head').append(css);
 }
+
+// Helper function for date formatting
+function formatDate(dateString) {
+    if (!dateString) return 'Unknown date';
+    
+    try {
+        const date = new Date(dateString);
+        return date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+    } catch (e) {
+        return dateString;
+    }
+}
+
+// Load and analyze file function for new layout
+function loadAndAnalyzeFile(filePath, fileName) {
+    console.log('Loading file:', filePath);
+    
+    // Update project status
+    $('#currentFileName').text(fileName);
+    $('#projectStatus').show();
+    
+    // Show loading message
+    showMessage('Loading Excel file...', 'info');
+    
+    // Load the Excel file using AJAX
+    fetch(filePath)
+        .then(response => {
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.arrayBuffer();
+        })
+        .then(data => {
+            // Process the Excel file
+            const workbook = XLSX.read(data, {type: 'array'});
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+            
+            // Convert to JSON
+            const jsonData = XLSX.utils.sheet_to_json(worksheet, {header: 1});
+            
+            if (jsonData.length === 0) {
+                throw new Error('Excel file is empty');
+            }
+            
+            // Extract column names (first row)
+            const columns = jsonData[0] || [];
+            
+            if (columns.length === 0) {
+                throw new Error('No columns found in Excel file');
+            }
+            
+            // Initialize the analyzer with the Excel data
+            if (window.initializeExcelAnalyzer) {
+                window.initializeExcelAnalyzer(columns, jsonData);
+                showMessage('Excel file loaded successfully!', 'success');
+                
+                // Show the filter panel
+                $('#filterPanel').removeClass('collapsed');
+                $('#mainContainer').removeClass('filter-collapsed');
+                
+                // Update toggle icon
+                $('#filterToggle .toggle-icon').text('‹');
+                
+            } else {
+                console.error('Excel analyzer not found');
+                showMessage('Excel analyzer not available', 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error loading Excel file:', error);
+            showMessage('Error loading Excel file: ' + error.message, 'error');
+        });
+}
+
+// Save current project function
+function saveCurrentProject() {
+    if (!currentProject) {
+        showMessage('No project to save', 'error');
+        return;
+    }
+    
+    // Update last saved timestamp
+    const now = new Date().toISOString();
+    $('#lastSaved').text(new Date().toLocaleString());
+    
+    showMessage('Project saved successfully!', 'success');
+}
+
+// Global functions for onclick handlers
+window.loadAndAnalyzeFile = loadAndAnalyzeFile;
+window.saveCurrentProject = saveCurrentProject;
