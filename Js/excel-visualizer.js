@@ -36,18 +36,27 @@ function populateColumnSelects(columns) {
   const filterColumnSelect = $('#filterColumnSelect select');
   
   // Clear existing options
-  columnSelect.empty();
+  if (columnSelect.length) {
+    columnSelect.empty();
+  }
   if (filterColumnSelect.length) {
     filterColumnSelect.empty();
   }
   
   // Add columns to selects
   columns.forEach(column => {
-    columnSelect.append(`<option value="${column}">${column}</option>`);
+    // Add to main chart configuration (in table)
+    if (columnSelect.length) {
+      columnSelect.append(`<option value="${column}">${column}</option>`);
+    }
+    
+    // Add to filter column select if it exists
     if (filterColumnSelect.length) {
       filterColumnSelect.append(`<option value="${column}">${column}</option>`);
     }
   });
+  
+  console.log('Populated', columns.length, 'columns to selects');
 }
 
 // Helper function to setup filter options

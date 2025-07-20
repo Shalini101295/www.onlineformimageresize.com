@@ -66,8 +66,8 @@ function debugProjectFiltering() {
                         console.log('  Files:', project.files ? project.files.length : 0);
                         
                         // Check if project name matches current project
-                        const nameMatch1 = project.name.includes(projectName);
-                        const nameMatch2 = projectName.includes(project.name);
+                        const nameMatch1 = project.name && projectName && project.name.includes(projectName);
+                        const nameMatch2 = project.name && projectName && projectName.includes(project.name);
                         console.log('  Name Match 1 (project includes current):', nameMatch1);
                         console.log('  Name Match 2 (current includes project):', nameMatch2);
                         console.log('  Should Show:', nameMatch1 || nameMatch2);

@@ -159,6 +159,17 @@ body {
     color: black;
 }
 
+/* Filter Loading Section */
+.filter-loading-section {
+    padding: 20px;
+    text-align: center;
+}
+
+.filter-loading-section .btn {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
 /* Column Selection - Table Layout */
 .column-selection {
     padding: 20px;

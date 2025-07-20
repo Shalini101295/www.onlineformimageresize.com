@@ -167,7 +167,8 @@ function proceedWithUpload(file) {
     // Create form data
     const formData = new FormData();
     formData.append('excel_file', file);
-    formData.append('user_id', currentUser.id);
+    formData.append('user_id', currentUser.id || currentUser.username);
+    formData.append('project_name', currentProject.name);
     formData.append('project_id', currentProject.id);
     
     // Upload file using XMLHttpRequest for progress tracking
@@ -678,10 +679,17 @@ $(document).ready(function() {
     });
     
     // Handle both file inputs
+    $('#excelFile').on('change', function() {
+        const file = this.files[0];
+        if (file) {
+            uploadExcelToProject(file);
+        }
+    });
+    
     $('#excelFileAlt').on('change', function() {
         const file = this.files[0];
         if (file) {
-            uploadProjectFile(file);
+            uploadExcelToProject(file);
         }
     });
     

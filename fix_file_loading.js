@@ -71,9 +71,9 @@ function displayQuickFixFiles(projects) {
             const currentProject = JSON.parse(currentProjectData);
             // Try to match by project name or part of the name
             filteredProjects = projects.filter(project => {
-                return project.name.includes(currentProject.name) || 
-                       currentProject.name.includes(project.name) ||
-                       project.name.toLowerCase().includes('test_project'); // Fallback for test projects
+                            return (project.name && currentProject.name && project.name.includes(currentProject.name)) ||
+                   (project.name && currentProject.name && currentProject.name.includes(project.name)) ||
+                   (project.name && project.name.toLowerCase().includes('test_project')); // Fallback for test projects
             });
             
             // If no match found, show the most recent project
