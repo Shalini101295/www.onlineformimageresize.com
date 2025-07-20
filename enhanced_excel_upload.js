@@ -11,8 +11,12 @@ function initializeEnhancedUpload() {
     // Setup file upload functionality
     setupProjectFileUpload();
     
-    // Load existing project files
-    loadProjectFiles();
+    // Use the working quick fix file loader instead of broken loadProjectFiles
+    if (typeof quickFixLoadFiles === 'function') {
+        quickFixLoadFiles();
+    } else {
+        loadProjectFiles();
+    }
     
     // Update UI based on project state
     updateProjectUI();
@@ -182,13 +186,9 @@ function proceedWithUpload(file) {
                     const successMessage = response.message || 'File uploaded successfully!';
                     showUploadSuccess(successMessage);
                     
-                    // Reload project files using quick fix method
+                    // Reload project files immediately
                     setTimeout(() => {
-                        if (typeof quickFixLoadFiles === 'function') {
-                            quickFixLoadFiles();
-                        } else {
-                            loadProjectFiles();
-                        }
+                        loadProjectFiles();
                     }, 500); // Small delay to ensure file is saved
                     
                     // Clear the file input
@@ -353,19 +353,38 @@ function proceedWithRename() {
 function loadProjectFiles() {
     if (!currentUser || !currentProject) return;
     
+    // Use the working quick file loader with project filtering
+    const userId = currentUser.id || currentUser.username;
+    const projectName = currentProject.name;
+    
     $.ajax({
-        url: 'project_file_manager.php',
+        url: 'quick_file_loader.php',
         method: 'POST',
         contentType: 'application/json',
         data: JSON.stringify({
-            action: 'get_project_files',
-            user_id: currentUser.id,
-            project_id: currentProject.id
+            action: 'scan_user_files',
+            user_id: userId,
+            filter_project: projectName
         }),
         success: function(response) {
-            if (response.success) {
-                projectFiles = response.files;
-                displayProjectFiles(response.files);
+            if (response.success && response.projects && response.projects.length > 0) {
+                // Convert quick fix format to display format
+                const files = [];
+                response.projects.forEach(project => {
+                    if (project.files) {
+                        project.files.forEach(file => {
+                            files.push({
+                                name: file.name,
+                                size: file.size,
+                                modified: file.modified,
+                                path: `${project.path}/${file.name}`
+                            });
+                        });
+                    }
+                });
+                
+                projectFiles = files;
+                displayProjectFiles(files);
             } else {
                 $('#projectFilesList').html('<div class="no-files">No files found in this project.</div>');
             }
@@ -434,31 +453,25 @@ function loadExcelFileFromProject(filename) {
     // Show loading state
     showLoadingMessage('Loading ' + filename + '...');
     
-    $.ajax({
-        url: 'project_file_manager.php',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            action: 'load_excel_data',
-            user_id: currentUser.id,
-            project_id: currentProject.id,
-            filename: filename
-        }),
-        success: function(response) {
-            if (response.success) {
-                // Load the file using direct file path
-                loadExcelFromPath(response.file_path, filename);
-            } else {
-                hideLoadingMessage();
-                showUploadError('Failed to load file: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            hideLoadingMessage();
-            console.error('Error loading file:', error);
-            showUploadError('Failed to load file: Network error');
-        }
-    });
+    // Find the file in the current project files
+    const file = projectFiles.find(f => f.name === filename);
+    if (!file) {
+        hideLoadingMessage();
+        showUploadError('File not found: ' + filename);
+        return;
+    }
+    
+    // Use the working quickLoadExcelFile function
+    if (typeof quickLoadExcelFile === 'function') {
+        hideLoadingMessage();
+        
+        // Extract project path from full file path
+        const projectPath = file.path.substring(0, file.path.lastIndexOf('/'));
+        quickLoadExcelFile(projectPath, filename);
+    } else {
+        // Fallback to direct file loading
+        loadExcelFromPath(file.path, filename);
+    }
 }
 
 function loadExcelFromPath(filePath, filename) {
