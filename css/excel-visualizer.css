@@ -147,17 +147,22 @@ body {
 }
 
 .filter-options {
-    max-height: 200px;
+    max-height: 100%;
     overflow-y: auto;
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    border-radius: 6px;
-    padding: 10px;
-    background: rgba(0, 0, 0, 0.1);
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 20px;
+    background: #fafafa;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 20px;
+    color: black;
 }
 
-/* Column Selection */
+/* Column Selection - Table Layout */
 .column-selection {
     padding: 20px;
+    background: #f0f8ff;
 }
 
 .column-selection h4 {
@@ -334,10 +339,16 @@ section h3 {
     font-weight: 500;
 }
 
-/* File Upload Styles */
+/* File Upload Styles - Table Layout */
 .file-upload-section {
     text-align: center;
     background: #f8f9ff;
+    padding: 20px;
+}
+
+.upload-section {
+    margin-top: 15px;
+    text-align: center;
 }
 
 .upload-area {
@@ -939,10 +950,41 @@ canvas {
     to { opacity: 1; transform: translateY(0); }
 }
 
-/* Project Files Section - New Layout */
+/* Main Table Layout */
+table {
+    border-collapse: collapse;
+    border-spacing: 0;
+    margin-top: 20px;
+}
+
+table td {
+    padding: 15px;
+    vertical-align: top;
+    border-right: 1px solid #e9ecef;
+    min-height: 300px;
+}
+
+table td:last-child {
+    border-right: none;
+}
+
+/* Table responsiveness */
+@media (max-width: 768px) {
+    table, tbody, tr, td {
+        display: block;
+        width: 100%;
+    }
+    
+    table td {
+        border-right: none;
+        border-bottom: 1px solid #e9ecef;
+        margin-bottom: 20px;
+    }
+}
+
+/* Project Files Section - Table Layout */
 .project-files-section {
-    padding: 30px;
-    border-bottom: 1px solid #e9ecef;
+    padding: 20px;
 }
 
 .project-files-section h3 {
@@ -965,6 +1007,9 @@ canvas {
 
 .files-list {
     flex: 1;
+}
+
+.files-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
     gap: 15px;
