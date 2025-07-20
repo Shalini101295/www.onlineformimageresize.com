@@ -21,9 +21,10 @@ try {
     
     $action = $input['action'] ?? '';
     $user_id = $input['user_id'] ?? '';
+    $filter_project = $input['filter_project'] ?? null;
     
     if ($action === 'scan_user_files') {
-        scanUserFiles($user_id);
+        scanUserFiles($user_id, $filter_project);
     } elseif ($action === 'scan_all_files') {
         scanAllFiles();
     } else {
@@ -37,7 +38,7 @@ try {
     ]);
 }
 
-function scanUserFiles($user_id) {
+function scanUserFiles($user_id, $filter_project = null) {
     if (empty($user_id)) {
         throw new Exception('User ID is required');
     }
@@ -111,13 +112,24 @@ function scanUserFiles($user_id) {
                     $project_files = scanExcelFiles($project_path);
                     
                     if (!empty($project_files)) {
-                        $projects[] = [
-                            'name' => $project_dir,
-                            'path' => $project_path,
-                            'files' => $project_files,
-                            'user_dir' => $user_dir,
-                            'match_score' => $is_match ? 10 : 1  // Higher score for matched directories
-                        ];
+                        // Apply project filter if specified
+                        $include_project = true;
+                        if ($filter_project !== null && !empty($filter_project)) {
+                            $include_project = (
+                                strpos(strtolower($project_dir), strtolower($filter_project)) !== false ||
+                                strpos(strtolower($filter_project), strtolower($project_dir)) !== false
+                            );
+                        }
+                        
+                        if ($include_project) {
+                            $projects[] = [
+                                'name' => $project_dir,
+                                'path' => $project_path,
+                                'files' => $project_files,
+                                'user_dir' => $user_dir,
+                                'match_score' => $is_match ? 10 : 1  // Higher score for matched directories
+                            ];
+                        }
                     }
                 }
             }

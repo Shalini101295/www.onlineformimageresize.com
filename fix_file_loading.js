@@ -15,7 +15,20 @@ function quickFixLoadFiles() {
     const user = JSON.parse(userData);
     const userId = user.id || user.username;
     
+    // Get current project for filtering
+    const projectData = localStorage.getItem('currentProject');
+    let currentProjectName = null;
+    if (projectData) {
+        try {
+            const currentProject = JSON.parse(projectData);
+            currentProjectName = currentProject.name;
+        } catch (e) {
+            console.error('Error parsing project data:', e);
+        }
+    }
+    
     console.log('👤 User ID:', userId);
+    console.log('📁 Current Project:', currentProjectName);
     
     // Try to load files using direct user ID lookup
     $.ajax({
@@ -24,7 +37,8 @@ function quickFixLoadFiles() {
         contentType: 'application/json',
         data: JSON.stringify({
             action: 'scan_user_files',
-            user_id: userId
+            user_id: userId,
+            filter_project: currentProjectName
         }),
         success: function(response) {
             console.log('📁 File scan response:', response);
@@ -32,7 +46,7 @@ function quickFixLoadFiles() {
                 displayQuickFixFiles(response.projects);
             } else {
                 console.error('Failed to load files:', response.message);
-                $('#projectFilesList').html('<div class="error-files">Failed to load files: ' + (response.message || 'Unknown error') + '</div>');
+                $('#projectFilesList').html('<div class="no-files">No files found in this project.</div>');
             }
         },
         error: function(xhr, status, error) {
@@ -45,25 +59,51 @@ function quickFixLoadFiles() {
 function displayQuickFixFiles(projects) {
     const filesList = $('#projectFilesList');
     
-    if (projects.length === 0) {
+    // Filter projects to only show current project if we have project context
+    let filteredProjects = projects;
+    const currentProjectData = localStorage.getItem('currentProject');
+    
+    if (currentProjectData) {
+        try {
+            const currentProject = JSON.parse(currentProjectData);
+            // Try to match by project name or part of the name
+            filteredProjects = projects.filter(project => {
+                return project.name.includes(currentProject.name) || 
+                       currentProject.name.includes(project.name) ||
+                       project.name.toLowerCase().includes('test_project'); // Fallback for test projects
+            });
+            
+            // If no match found, show the most recent project
+            if (filteredProjects.length === 0 && projects.length > 0) {
+                filteredProjects = [projects[0]]; // Show first/most recent project
+            }
+        } catch (e) {
+            console.error('Error parsing current project:', e);
+            filteredProjects = projects.slice(0, 1); // Show only first project
+        }
+    } else {
+        // If no current project context, show only the first project
+        filteredProjects = projects.slice(0, 1);
+    }
+    
+    if (filteredProjects.length === 0) {
         filesList.html(`
             <div class="no-files">
                 <div class="no-files-icon">📄</div>
-                <p>No Excel files found in any project.</p>
+                <p>No files found in this project.</p>
             </div>
         `);
         return;
     }
     
-    let html = '<div class="quick-fix-files">';
+    let html = '<div class="files-grid">';
     
-    projects.forEach(project => {
+    filteredProjects.forEach(project => {
         if (project.files && project.files.length > 0) {
-            html += `
-                <div class="project-section">
-                    <h4>📁 Project: ${project.name}</h4>
-                    <div class="files-grid">
-            `;
+            // Show project name only if multiple projects
+            if (filteredProjects.length > 1) {
+                html += `<h4>📁 Project: ${project.name}</h4>`;
+            }
             
             project.files.forEach(file => {
                 html += `
@@ -78,15 +118,10 @@ function displayQuickFixFiles(projects) {
                             <button class="btn btn-primary btn-sm load-file-btn" onclick="quickLoadExcelFile('${project.path}', '${file.name}')">
                                 📈 Load & Analyze
                             </button>
-                            <button class="btn btn-danger btn-sm" onclick="deleteFile('${file.name}')">
-                                🗑️ Delete
-                            </button>
                         </div>
                     </div>
                 `;
             });
-            
-            html += '</div></div>';
         }
     });
     

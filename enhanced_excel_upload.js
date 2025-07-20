@@ -182,8 +182,14 @@ function proceedWithUpload(file) {
                     const successMessage = response.message || 'File uploaded successfully!';
                     showUploadSuccess(successMessage);
                     
-                    // Reload project files
-                    loadProjectFiles();
+                    // Reload project files using quick fix method
+                    setTimeout(() => {
+                        if (typeof quickFixLoadFiles === 'function') {
+                            quickFixLoadFiles();
+                        } else {
+                            loadProjectFiles();
+                        }
+                    }, 500); // Small delay to ensure file is saved
                     
                     // Clear the file input
                     $('#hiddenExcelUpload').val('');
@@ -403,10 +409,7 @@ function displayProjectFiles(files) {
                 </div>
                 <div class="file-actions">
                     <button class="btn btn-primary btn-small load-file" data-filename="${file.name}">
-                        Load Data
-                    </button>
-                    <button class="btn btn-danger btn-small delete-file" data-filename="${file.name}">
-                        Delete
+                        📈 Load & Analyze
                     </button>
                 </div>
             </div>
@@ -422,10 +425,7 @@ function displayProjectFiles(files) {
         loadExcelFileFromProject(filename);
     });
     
-    $('.delete-file').on('click', function() {
-        const filename = $(this).data('filename');
-        deleteProjectFile(filename);
-    });
+    // Delete functionality removed as requested
 }
 
 function loadExcelFileFromProject(filename) {
@@ -566,35 +566,7 @@ function loadExcelFromPath(filePath, filename) {
         });
 }
 
-function deleteProjectFile(filename) {
-    if (!confirm('Are you sure you want to delete "' + filename + '"? This action cannot be undone.')) {
-        return;
-    }
-    
-    $.ajax({
-        url: 'project_file_manager.php',
-        method: 'POST',
-        contentType: 'application/json',
-        data: JSON.stringify({
-            action: 'delete_project_file',
-            user_id: currentUser.id,
-            project_id: currentProject.id,
-            filename: filename
-        }),
-        success: function(response) {
-            if (response.success) {
-                showUploadSuccess('File deleted successfully');
-                loadProjectFiles(); // Reload file list
-            } else {
-                showUploadError('Failed to delete file: ' + response.message);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error deleting file:', error);
-            showUploadError('Failed to delete file: Network error');
-        }
-    });
-}
+// Delete functionality removed as requested
 
 function updateProjectUI() {
     if (!currentProject) return;
