@@ -992,6 +992,13 @@ function quickLoadExcelFile(projectPath, fileName) {
                 // Update toggle icon
                 $('#filterToggle .toggle-icon').text('‹');
                 
+                // Load saved chart settings for this project
+                setTimeout(() => {
+                    if (window.loadChartSettings) {
+                        window.loadChartSettings();
+                    }
+                }, 1500);
+                
             } else {
                 console.error('Excel analyzer not found');
                 showMessage('Excel analyzer not available', 'error');

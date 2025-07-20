@@ -27,6 +27,14 @@ function initializeExcelAnalyzer(columns, jsonData) {
   $('.filter-section').show();
   $('.column-selection').show();
   
+  // Setup auto-save functionality
+  setupAutoSave();
+  
+  // Load saved chart settings for this project
+  setTimeout(() => {
+    loadChartSettings();
+  }, 1000);
+  
   console.log('Excel Analyzer initialized successfully');
 }
 
@@ -77,8 +85,198 @@ function setupFilterOptions() {
   }
 }
 
+// Chart Settings Save/Load Functionality
+function saveChartSettings() {
+  if (!currentUser || !currentProject) {
+    console.warn('No user or project data available for saving chart settings');
+    return;
+  }
+  
+  const selectedColumns = $('#columnSelect').val() || [];
+  const selectedTheme = $('#themeSelect').val() || 'default';
+  
+  // Collect chart configurations
+  const chartConfigs = {};
+  selectedColumns.forEach(col => {
+    const canvasId = `chart-${col.replace(/\s+/g, '_')}-canvas`;
+    const chartType = $(`select.chart-type[data-target="${canvasId}"]`).val() || 'bar';
+    const isMultiColumn = $(`.multi-column-checkbox[data-target="${canvasId}"]`).is(':checked') || false;
+    const selectedMultiCols = $(`.multi-column-select[data-target="${canvasId}"]`).val() || [];
+    
+    chartConfigs[col] = {
+      type: chartType,
+      isMultiColumn: isMultiColumn,
+      multiColumns: selectedMultiCols,
+      color: colorPreferences[col] || null
+    };
+  });
+  
+  // Collect filter settings
+  const filterSettings = {};
+  if (window.filterableColumns) {
+    window.filterableColumns.forEach(col => {
+      const filterId = `filter-${col.replace(/\s+/g, '_')}`;
+      const checked = $(`input[name="${filterId}"]:checked`).map(function () {
+        return $(this).val();
+      }).get();
+      if (checked.length > 0) {
+        filterSettings[col] = checked;
+      }
+    });
+  }
+  
+  const settingsData = {
+    selectedColumns: selectedColumns,
+    theme: selectedTheme,
+    chartConfigs: chartConfigs,
+    filterSettings: filterSettings,
+    timestamp: new Date().toISOString(),
+    projectName: currentProject.name,
+    projectId: currentProject.id
+  };
+  
+  // Save to server
+  $.ajax({
+    url: 'save_chart_settings.php',
+    method: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({
+      user_id: currentUser.id || currentUser.username,
+      project_id: currentProject.id,
+      project_name: currentProject.name,
+      settings: settingsData
+    }),
+    success: function(response) {
+      if (response.success) {
+        console.log('Chart settings saved successfully');
+        showMessage('Chart settings saved!', 'success');
+      } else {
+        console.error('Failed to save chart settings:', response.message);
+        showMessage('Failed to save chart settings: ' + response.message, 'error');
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error('Error saving chart settings:', error);
+      showMessage('Error saving chart settings: ' + error, 'error');
+    }
+  });
+}
+
+function loadChartSettings() {
+  if (!currentUser || !currentProject) {
+    console.warn('No user or project data available for loading chart settings');
+    return;
+  }
+  
+  console.log('Loading chart settings for project:', currentProject.name);
+  
+  $.ajax({
+    url: 'load_chart_settings.php',
+    method: 'POST',
+    contentType: 'application/json',
+    data: JSON.stringify({
+      user_id: currentUser.id || currentUser.username,
+      project_id: currentProject.id,
+      project_name: currentProject.name
+    }),
+    success: function(response) {
+      if (response.success && response.settings) {
+        console.log('Chart settings loaded:', response.settings);
+        applyChartSettings(response.settings);
+        showMessage('Chart settings loaded!', 'success');
+      } else {
+        console.log('No saved chart settings found for this project');
+      }
+    },
+    error: function(xhr, status, error) {
+      console.error('Error loading chart settings:', error);
+    }
+  });
+}
+
+function applyChartSettings(settings) {
+  console.log('Applying chart settings:', settings);
+  
+  // Apply theme
+  if (settings.theme) {
+    $('#themeSelect').val(settings.theme);
+  }
+  
+  // Apply selected columns
+  if (settings.selectedColumns && settings.selectedColumns.length > 0) {
+    $('#columnSelect').val(settings.selectedColumns);
+  }
+  
+  // Apply filter settings
+  if (settings.filterSettings) {
+    Object.keys(settings.filterSettings).forEach(col => {
+      const filterId = `filter-${col.replace(/\s+/g, '_')}`;
+      const values = settings.filterSettings[col];
+      
+      // Uncheck all first
+      $(`input[name="${filterId}"]`).prop('checked', false);
+      
+      // Check the saved values
+      values.forEach(value => {
+        $(`input[name="${filterId}"][value="${value}"]`).prop('checked', true);
+      });
+    });
+  }
+  
+  // Apply chart configurations and regenerate charts
+  if (settings.chartConfigs && Object.keys(settings.chartConfigs).length > 0) {
+    Object.keys(settings.chartConfigs).forEach(col => {
+      const config = settings.chartConfigs[col];
+      const canvasId = `chart-${col.replace(/\s+/g, '_')}-canvas`;
+      
+      // Set chart type
+      $(`select.chart-type[data-target="${canvasId}"]`).val(config.type || 'bar');
+      
+      // Set multi-column settings
+      if (config.isMultiColumn) {
+        $(`.multi-column-checkbox[data-target="${canvasId}"]`).prop('checked', true);
+        if (config.multiColumns && config.multiColumns.length > 0) {
+          $(`.multi-column-select[data-target="${canvasId}"]`).val(config.multiColumns);
+        }
+      }
+      
+      // Set color preferences
+      if (config.color) {
+        colorPreferences[col] = config.color;
+      }
+    });
+    
+    // Regenerate charts with saved settings
+    setTimeout(() => {
+      $('#generateChart').click();
+    }, 500);
+  }
+}
+
+// Auto-save chart settings when changes are made
+function setupAutoSave() {
+  // Save settings when columns are selected/deselected
+  $('#columnSelect').on('change', function() {
+    if ($(this).val() && $(this).val().length > 0) {
+      setTimeout(saveChartSettings, 1000); // Debounce
+    }
+  });
+  
+  // Save settings when theme changes
+  $('#themeSelect').on('change', function() {
+    setTimeout(saveChartSettings, 500);
+  });
+  
+  // Save settings when generate charts is clicked
+  $('#generateChart').on('click', function() {
+    setTimeout(saveChartSettings, 2000); // Allow charts to generate first
+  });
+}
+
 // Make function globally available
 window.initializeExcelAnalyzer = initializeExcelAnalyzer;
+window.saveChartSettings = saveChartSettings;
+window.loadChartSettings = loadChartSettings;
 
 
 const chartThemes = {
@@ -824,6 +1022,12 @@ function renderMultiColumnPieCharts(canvasId, type, columns, data) {
 
 function setupPPTExporter() {
   $('#exportPPT').click(function () {
+    // Check if PptxGenJS is available
+    if (typeof PptxGenJS === 'undefined') {
+      alert('PowerPoint export library is not loaded. Please refresh the page and try again.');
+      return;
+    }
+    
     const pptx = new PptxGenJS();
     const selectedColumns = $('#columnSelect').val();
     if (!selectedColumns || selectedColumns.length === 0) return alert("Select columns to export.");

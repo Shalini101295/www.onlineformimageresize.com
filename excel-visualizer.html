@@ -40,7 +40,8 @@
             </div>
             
             <div class="action-buttons-top">
-                <button id="saveSettingsBtn" class="btn btn-info">Save Settings</button>
+                <button id="saveChartSettingsBtn" class="btn btn-success">Save Chart Settings</button>
+                <button id="loadChartSettingsBtn" class="btn btn-info">Load Chart Settings</button>
                 <button id="exportPPT" class="btn btn-warning">Export to PowerPoint</button>
             </div>
         </div>
@@ -175,6 +176,23 @@
             if (currentUser.username || currentUser.name) {
                 $('#currentUserName').text(currentUser.username || currentUser.name);
             }
+            
+            // Chart settings buttons
+            $('#saveChartSettingsBtn').on('click', function() {
+                if (window.saveChartSettings) {
+                    window.saveChartSettings();
+                } else {
+                    alert('Chart settings function not available. Please load an Excel file first.');
+                }
+            });
+            
+            $('#loadChartSettingsBtn').on('click', function() {
+                if (window.loadChartSettings) {
+                    window.loadChartSettings();
+                } else {
+                    alert('Chart settings function not available. Please load an Excel file first.');
+                }
+            });
         });
     </script>
 </body>
