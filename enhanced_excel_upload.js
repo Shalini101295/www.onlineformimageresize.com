@@ -444,7 +444,6 @@ function displayProjectFiles(files) {
     
     gridHtml += '</div>';
     filesList.html(gridHtml);
-    });
     
     // Delete functionality removed as requested
 }
