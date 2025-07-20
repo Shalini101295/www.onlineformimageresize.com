@@ -7,6 +7,70 @@ const colorPreferences = {};
 const chartRegistry = {};
 window.allColumns = [];
 
+// Initialize Excel Analyzer - called by enhanced upload system
+function initializeExcelAnalyzer(columns, jsonData) {
+  console.log('Initializing Excel Analyzer with columns:', columns);
+  console.log('Data rows:', jsonData.length);
+  
+  // Set global variables
+  window.allColumns = columns;
+  window.excelData = jsonData.slice(1); // Remove header row
+  window.filterableColumns = columns; // Make all columns filterable by default
+  
+  // Populate column selects
+  populateColumnSelects(columns);
+  
+  // Setup filter options
+  setupFilterOptions();
+  
+  // Show relevant sections
+  $('.filter-section').show();
+  $('.column-selection').show();
+  
+  console.log('Excel Analyzer initialized successfully');
+}
+
+// Helper function to populate column select dropdowns
+function populateColumnSelects(columns) {
+  const columnSelect = $('#columnSelect');
+  const filterColumnSelect = $('#filterColumnSelect select');
+  
+  // Clear existing options
+  columnSelect.empty();
+  if (filterColumnSelect.length) {
+    filterColumnSelect.empty();
+  }
+  
+  // Add columns to selects
+  columns.forEach(column => {
+    columnSelect.append(`<option value="${column}">${column}</option>`);
+    if (filterColumnSelect.length) {
+      filterColumnSelect.append(`<option value="${column}">${column}</option>`);
+    }
+  });
+}
+
+// Helper function to setup filter options
+function setupFilterOptions() {
+  // This will be called after filterable columns are selected
+  // For now, make all columns filterable
+  window.filterableColumns = window.allColumns;
+  
+  // Populate filter column select if it exists
+  const filterColumnSelect = $('#filterColumnSelect');
+  if (filterColumnSelect.length && !filterColumnSelect.find('select').length) {
+    filterColumnSelect.html(`
+      <label>Select Columns to Filter:</label>
+      <select multiple id="filterColumnMultiSelect">
+        ${window.allColumns.map(col => `<option value="${col}" selected>${col}</option>`).join('')}
+      </select>
+    `);
+  }
+}
+
+// Make function globally available
+window.initializeExcelAnalyzer = initializeExcelAnalyzer;
+
 
 const chartThemes = {
   default: () => randomColor(),
@@ -245,12 +309,30 @@ $('#saveSettingsBtn').click(function () {
 
 
 function applyFilters() {
+  // Check if data is loaded
+  if (!window.excelData || !Array.isArray(window.excelData)) {
+    console.warn('Excel data not loaded yet');
+    return [];
+  }
+  
+  // Check if filterable columns are defined
+  if (!window.filterableColumns || !Array.isArray(window.filterableColumns)) {
+    console.warn('Filterable columns not defined yet');
+    return window.excelData;
+  }
+  
   return window.excelData.filter(row => {
     return window.filterableColumns.every(col => {
       const filterId = `filter-${col.replace(/\s+/g, '_')}`;
       const checked = $(`input[name="${filterId}"]:checked`).map(function () {
         return $(this).val();
       }).get();
+      
+      // If no checkboxes are checked, include all rows for this column
+      if (checked.length === 0) {
+        return true;
+      }
+      
       return checked.includes(String(row[col]));
     });
   });

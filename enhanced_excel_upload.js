@@ -885,8 +885,8 @@ function loadAndAnalyzeFile(filePath, fileName) {
                 showMessage('Excel file loaded successfully!', 'success');
                 
                 // Show the filter panel
-                $('#filterPanel').removeClass('collapsed');
-                $('#mainContainer').removeClass('filter-collapsed');
+                $('#filterPanel').addClass('expanded');
+                $('#mainContainer').addClass('filter-expanded');
                 
                 // Update toggle icon
                 $('#filterToggle .toggle-icon').text('‹');

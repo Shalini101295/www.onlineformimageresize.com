@@ -1058,16 +1058,20 @@ canvas {
         width: 280px;
     }
     
-    .filter-panel.collapsed {
-        transform: translateX(-240px);
+    .filter-panel:hover {
+        transform: translateX(-40px);
+    }
+    
+    .filter-panel.expanded {
+        transform: translateX(0);
     }
     
     .container {
-        margin-left: 280px;
+        margin-left: 40px;
     }
     
-    .container.filter-collapsed {
-        margin-left: 40px;
+    .container.filter-expanded {
+        margin-left: 280px;
     }
     
     .header-nav {
@@ -1099,19 +1103,19 @@ canvas {
         transform: translateX(-100%);
     }
     
-    .filter-panel.collapsed {
-        transform: translateX(-100%);
+    .filter-panel:hover {
+        transform: translateX(-20px);
     }
     
-    .filter-panel.hover-expanded {
-        transform: translateX(-20px);
+    .filter-panel.expanded {
+        transform: translateX(0);
     }
     
     .container {
         margin-left: 0;
     }
     
-    .container.filter-collapsed {
+    .container.filter-expanded {
         margin-left: 0;
     }
 }
