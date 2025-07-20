@@ -24,18 +24,22 @@ body {
     background: linear-gradient(135deg, #2c3e50, #34495e);
     color: white;
     z-index: 1000;
-    transform: translateX(0);
+    transform: translateX(-280px);
     transition: transform 0.3s ease;
     overflow-y: auto;
     box-shadow: 2px 0 10px rgba(0, 0, 0, 0.3);
 }
 
-.filter-panel.collapsed {
-    transform: translateX(-280px);
+.filter-panel.expanded {
+    transform: translateX(0);
 }
 
-.filter-panel.collapsed.hover-expanded {
+.filter-panel:hover {
     transform: translateX(-40px);
+}
+
+.filter-panel.expanded:hover {
+    transform: translateX(0);
 }
 
 .filter-header {
@@ -192,14 +196,14 @@ body {
 
 /* Main Container Styles */
 .container {
-    margin-left: 320px;
+    margin-left: 40px;
     min-height: 100vh;
     background: white;
     transition: margin-left 0.3s ease;
 }
 
-.container.filter-collapsed {
-    margin-left: 40px;
+.container.filter-expanded {
+    margin-left: 320px;
 }
 
 /* Header Styles */

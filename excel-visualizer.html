@@ -23,7 +23,7 @@
         <div class="filter-header">
             <h3>Filters & Settings</h3>
             <button class="filter-toggle" id="filterToggle">
-                <span class="toggle-icon">‹</span>
+                <span class="toggle-icon">›</span>
             </button>
         </div>
         
@@ -140,25 +140,19 @@
         $(document).ready(function() {
             // Filter panel toggle
             $('#filterToggle').on('click', function() {
-                $('#filterPanel').toggleClass('collapsed');
-                $('#mainContainer').toggleClass('filter-collapsed');
+                $('#filterPanel').toggleClass('expanded');
+                $('#mainContainer').toggleClass('filter-expanded');
                 
                 const icon = $(this).find('.toggle-icon');
-                if ($('#filterPanel').hasClass('collapsed')) {
-                    icon.text('›');
-                } else {
+                if ($('#filterPanel').hasClass('expanded')) {
                     icon.text('‹');
+                } else {
+                    icon.text('›');
                 }
             });
             
             // Auto-show filter panel on hover (when collapsed)
-            $('#filterPanel').on('mouseenter', function() {
-                if ($(this).hasClass('collapsed')) {
-                    $(this).addClass('hover-expanded');
-                }
-            }).on('mouseleave', function() {
-                $(this).removeClass('hover-expanded');
-            });
+            // CSS handles hover expansion now
             
             // Load project info from localStorage
             const currentProject = JSON.parse(localStorage.getItem('currentProject') || '{}');
