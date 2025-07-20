@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Validation Test</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .test-case { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 5px; padding: 20px; margin: 20px 0; }
+        .success { border-left: 4px solid #28a745; }
+        .warning { border-left: 4px solid #ffc107; }
+        .error { border-left: 4px solid #dc3545; }
+        button { background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; margin: 5px; }
+        .filename-display { background: white; padding: 10px; border-radius: 4px; margin: 10px 0; font-family: monospace; }
+    </style>
+</head>
+<body>
+    <h1>📤 Upload Validation Test</h1>
+    
+    <div class="test-case success">
+        <h3>✅ Upload Validation Rules Implemented</h3>
+        <p><strong>The system now validates uploads with these rules:</strong></p>
+        <ol>
+            <li><strong>First Upload:</strong> If no files exist in the project folder, allow upload</li>
+            <li><strong>Same Filename:</strong> If a file with the same name exists, replace it</li>
+            <li><strong>Different Filename:</strong> If a file with a different name exists, show conflict dialog</li>
+        </ol>
+    </div>
+
+    <div class="test-case warning">
+        <h3>⚠️ Current Project Status</h3>
+        <p>Your project currently contains:</p>
+        <div class="filename-display">
+            📄 250720.xlsx (231.81 KB)<br>
+            📄 250720_New.xlsx (231.81 KB)
+        </div>
+        <p><strong>Issue:</strong> You have two different filenames, which violates the new validation rules.</p>
+    </div>
+
+    <div class="test-case">
+        <h3>🔧 Test Scenarios</h3>
+        
+        <h4>Scenario 1: Upload file with same name</h4>
+        <p>✅ <strong>Allowed:</strong> Upload "250720.xlsx" → Will replace existing file</p>
+        
+        <h4>Scenario 2: Upload file with different name</h4>
+        <p>❌ <strong>Blocked:</strong> Upload "NewFile.xlsx" → Will show conflict dialog</p>
+        
+        <h4>Scenario 3: Empty project</h4>
+        <p>✅ <strong>Allowed:</strong> First file upload in new project</p>
+    </div>
+
+    <div class="test-case error">
+        <h3>🚨 Conflict Dialog Preview</h3>
+        <p>When you try to upload a file with a different name, you'll see:</p>
+        <button onclick="showTestConflictDialog()">Show Example Conflict Dialog</button>
+    </div>
+
+    <div class="test-case">
+        <h3>💡 Recommendations</h3>
+        <ul>
+            <li><strong>Clean up current project:</strong> Keep only one file (delete the other)</li>
+            <li><strong>Use consistent naming:</strong> Always use the same filename for updates</li>
+            <li><strong>Create separate projects:</strong> For files with different names</li>
+        </ul>
+    </div>
+
+    <script>
+        function showTestConflictDialog() {
+            const conflictHtml = `
+                <div class="filename-conflict-dialog" style="
+                    position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+                    background: rgba(0,0,0,0.5); display: flex; align-items: center; 
+                    justify-content: center; z-index: 10000;
+                ">
+                    <div style="
+                        background: white; padding: 30px; border-radius: 10px; 
+                        max-width: 500px; margin: 20px; text-align: center;
+                        box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+                    ">
+                        <h3 style="color: #dc3545; margin-bottom: 20px;">⚠️ Filename Conflict</h3>
+                        
+                        <p style="margin-bottom: 15px;">This project already contains:</p>
+                        <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                            <strong>📄 250720.xlsx</strong>
+                        </div>
+                        
+                        <p style="margin-bottom: 15px;">You're trying to upload:</p>
+                        <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+                            <strong>📄 NewReport.xlsx</strong>
+                        </div>
+                        
+                        <p style="margin-bottom: 20px; color: #666;">
+                            <strong>Choose an option:</strong>
+                        </p>
+                        
+                        <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                            <button onclick="closeTestDialog()" style="
+                                background: #6c757d; color: white; border: none; 
+                                padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                            ">
+                                📁 Create New Project
+                            </button>
+                            
+                            <button onclick="closeTestDialog()" style="
+                                background: #17a2b8; color: white; border: none; 
+                                padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                            ">
+                                ✏️ Rename File
+                            </button>
+                            
+                            <button onclick="closeTestDialog()" style="
+                                background: #dc3545; color: white; border: none; 
+                                padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                            ">
+                                ❌ Cancel Upload
+                            </button>
+                        </div>
+                        
+                        <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; text-align: left;">
+                            <small style="color: #0c5460;">
+                                <strong>💡 Tip:</strong> Each project should contain files with the same name. 
+                                If you need to upload a file with a different name, create a new project.
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            document.body.insertAdjacentHTML('beforeend', conflictHtml);
+        }
+
+        function closeTestDialog() {
+            const dialog = document.querySelector('.filename-conflict-dialog');
+            if (dialog) {
+                dialog.remove();
+            }
+        }
+    </script>
+</body>
+</html>

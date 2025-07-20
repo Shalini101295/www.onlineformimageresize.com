@@ -78,7 +78,41 @@ function handleFileUpload() {
         $safe_filename = sanitizeFilename($file['name']);
         $target_path = $project_dir . '/' . $safe_filename;
         
-        // Check if file exists - we now allow replacement for same filename
+        // Check existing files in project directory
+        $existing_files = [];
+        if (is_dir($project_dir)) {
+            $dir_files = scandir($project_dir);
+            foreach ($dir_files as $existing_file) {
+                if ($existing_file !== '.' && $existing_file !== '..' && $existing_file !== 'project_metadata.json') {
+                    $extension = strtolower(pathinfo($existing_file, PATHINFO_EXTENSION));
+                    if (in_array($extension, $allowed_extensions)) {
+                        $existing_files[] = $existing_file;
+                    }
+                }
+            }
+        }
+        
+        // Validation logic for file uploads
+        if (empty($existing_files)) {
+            // Case 1: No files in folder - allow upload
+            $validation_result = 'first_upload';
+        } elseif (in_array($safe_filename, $existing_files)) {
+            // Case 2: File with same name exists - allow replacement
+            $validation_result = 'replace_existing';
+        } else {
+            // Case 3: Different filename exists - reject with message
+            echo json_encode([
+                'success' => false,
+                'message' => 'A file with a different name already exists in this project.',
+                'error_type' => 'filename_conflict',
+                'existing_files' => $existing_files,
+                'uploaded_file' => $safe_filename,
+                'suggestion' => 'Please either: 1) Upload a file with the same name as existing files, or 2) Create a new project for this file.'
+            ]);
+            return;
+        }
+        
+        // Check if file exists at target path
         $replacing_existing = file_exists($target_path);
         
         // Move uploaded file
@@ -86,7 +120,18 @@ function handleFileUpload() {
             // Update project metadata
             updateProjectMetadata($project_dir, $safe_filename);
             
-            $action_message = $replacing_existing ? 'File replaced successfully' : 'File uploaded successfully';
+            $action_message = '';
+            switch ($validation_result) {
+                case 'first_upload':
+                    $action_message = 'File uploaded successfully (first file in project)';
+                    break;
+                case 'replace_existing':
+                    $action_message = 'File replaced successfully';
+                    break;
+                default:
+                    $action_message = 'File uploaded successfully';
+            }
+            
             logFileActivity('UPLOAD_SUCCESS', $user_id, $project_id, $safe_filename, $action_message);
             
             echo json_encode([
@@ -94,7 +139,8 @@ function handleFileUpload() {
                 'message' => $action_message,
                 'filename' => $safe_filename,
                 'file_path' => $target_path,
-                'replaced' => $replacing_existing
+                'replaced' => $replacing_existing,
+                'validation_result' => $validation_result
             ]);
         } else {
             throw new Exception('Failed to save uploaded file');

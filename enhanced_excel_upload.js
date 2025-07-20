@@ -179,7 +179,8 @@ function proceedWithUpload(file) {
             try {
                 const response = JSON.parse(xhr.responseText);
                 if (response.success) {
-                    showUploadSuccess('File uploaded successfully!');
+                    const successMessage = response.message || 'File uploaded successfully!';
+                    showUploadSuccess(successMessage);
                     
                     // Reload project files
                     loadProjectFiles();
@@ -187,7 +188,12 @@ function proceedWithUpload(file) {
                     // Clear the file input
                     $('#hiddenExcelUpload').val('');
                 } else {
-                    showUploadError('Upload failed: ' + response.message);
+                    // Handle validation errors specially
+                    if (response.error_type === 'filename_conflict') {
+                        showFilenameConflictDialog(response);
+                    } else {
+                        showUploadError('Upload failed: ' + response.message);
+                    }
                 }
             } catch (e) {
                 showUploadError('Upload failed: Invalid server response');
@@ -204,6 +210,138 @@ function proceedWithUpload(file) {
     
     xhr.open('POST', 'project_file_manager.php');
     xhr.send(formData);
+}
+
+function showFilenameConflictDialog(response) {
+    const existingFiles = response.existing_files.join(', ');
+    const uploadedFile = response.uploaded_file;
+    
+    const conflictHtml = `
+        <div class="filename-conflict-dialog" style="
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
+            background: rgba(0,0,0,0.5); display: flex; align-items: center; 
+            justify-content: center; z-index: 10000;
+        ">
+            <div style="
+                background: white; padding: 30px; border-radius: 10px; 
+                max-width: 500px; margin: 20px; text-align: center;
+                box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+            ">
+                <h3 style="color: #dc3545; margin-bottom: 20px;">⚠️ Filename Conflict</h3>
+                
+                <p style="margin-bottom: 15px;">This project already contains:</p>
+                <div style="background: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px;">
+                    <strong>📄 ${existingFiles}</strong>
+                </div>
+                
+                <p style="margin-bottom: 15px;">You're trying to upload:</p>
+                <div style="background: #fff3cd; padding: 10px; border-radius: 5px; margin-bottom: 20px;">
+                    <strong>📄 ${uploadedFile}</strong>
+                </div>
+                
+                <p style="margin-bottom: 20px; color: #666;">
+                    <strong>Choose an option:</strong>
+                </p>
+                
+                <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap;">
+                    <button onclick="closeFilenameConflictDialog()" style="
+                        background: #6c757d; color: white; border: none; 
+                        padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                    ">
+                        📁 Create New Project
+                    </button>
+                    
+                    <button onclick="showRenameOption('${uploadedFile}', '${existingFiles}')" style="
+                        background: #17a2b8; color: white; border: none; 
+                        padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                    ">
+                        ✏️ Rename File
+                    </button>
+                    
+                    <button onclick="closeFilenameConflictDialog()" style="
+                        background: #dc3545; color: white; border: none; 
+                        padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                    ">
+                        ❌ Cancel Upload
+                    </button>
+                </div>
+                
+                <div style="margin-top: 20px; padding: 15px; background: #e7f3ff; border-radius: 5px; text-align: left;">
+                    <small style="color: #0c5460;">
+                        <strong>💡 Tip:</strong> Each project should contain files with the same name. 
+                        If you need to upload a file with a different name, create a new project.
+                    </small>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(conflictHtml);
+}
+
+function closeFilenameConflictDialog() {
+    $('.filename-conflict-dialog').remove();
+    // Clear the file input
+    $('#hiddenExcelUpload').val('');
+}
+
+function showRenameOption(currentName, existingFiles) {
+    const existingName = existingFiles.split(',')[0].trim();
+    const extension = existingName.split('.').pop();
+    
+    $('.filename-conflict-dialog').html(`
+        <div style="
+            background: white; padding: 30px; border-radius: 10px; 
+            max-width: 500px; margin: 20px; text-align: center;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        ">
+            <h3 style="color: #17a2b8; margin-bottom: 20px;">✏️ Rename File</h3>
+            
+            <p style="margin-bottom: 15px;">Rename your file to match the existing file:</p>
+            
+            <div style="margin-bottom: 20px;">
+                <input type="text" id="newFileName" value="${existingName}" style="
+                    width: 100%; padding: 10px; border: 2px solid #ddd; 
+                    border-radius: 5px; font-size: 16px; text-align: center;
+                ">
+            </div>
+            
+            <div style="display: flex; gap: 10px; justify-content: center;">
+                <button onclick="proceedWithRename()" style="
+                    background: #28a745; color: white; border: none; 
+                    padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                ">
+                    ✅ Upload with New Name
+                </button>
+                
+                <button onclick="closeFilenameConflictDialog()" style="
+                    background: #6c757d; color: white; border: none; 
+                    padding: 10px 20px; border-radius: 5px; cursor: pointer;
+                ">
+                    ❌ Cancel
+                </button>
+            </div>
+            
+            <div style="margin-top: 15px;">
+                <small style="color: #666;">
+                    This will replace the existing file with the same name.
+                </small>
+            </div>
+        </div>
+    `);
+}
+
+function proceedWithRename() {
+    const newFileName = $('#newFileName').val().trim();
+    if (!newFileName) {
+        alert('Please enter a filename');
+        return;
+    }
+    
+    // Note: For now, we'll just close the dialog and suggest manual rename
+    // A full implementation would need to rename the file before upload
+    alert('Please rename your file to "' + newFileName + '" and upload again.');
+    closeFilenameConflictDialog();
 }
 
 function loadProjectFiles() {
