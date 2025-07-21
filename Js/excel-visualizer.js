@@ -91,11 +91,23 @@ function saveChartSettings() {
   const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
   const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
   
-  if (!currentUser || !currentProject || !currentUser.username || !currentProject.name) {
+  if (!currentUser || !currentProject) {
     console.warn('No user or project data available for saving chart settings');
     console.log('Current user:', currentUser);
     console.log('Current project:', currentProject);
     alert('Unable to save chart settings. User or project information is missing.');
+    return;
+  }
+  
+  // Extract the actual user ID - handle different formats
+  const userId = currentUser.id || currentUser.username || currentUser.name;
+  const projectName = currentProject.name || 'Unknown Project';
+  
+  if (!userId || !projectName) {
+    console.warn('Missing user ID or project name for saving chart settings');
+    console.log('User ID:', userId);
+    console.log('Project name:', projectName);
+    alert('Unable to save chart settings. Missing user ID or project name.');
     return;
   }
   
@@ -148,9 +160,9 @@ function saveChartSettings() {
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
-      user_id: currentUser.username || currentUser.id || currentUser.name,
+      user_id: userId,
       project_id: currentProject.id || 'unknown',
-      project_name: currentProject.name || 'Unknown Project',
+      project_name: projectName,
       action: 'save',
       settings: settingsData
     }),
@@ -189,10 +201,21 @@ function loadChartSettings() {
   const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
   const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
   
-  if (!currentUser || !currentProject || !currentUser.username || !currentProject.name) {
+  if (!currentUser || !currentProject) {
     console.warn('No user or project data available for loading chart settings');
     console.log('Current user:', currentUser);
     console.log('Current project:', currentProject);
+    return;
+  }
+  
+  // Extract the actual user ID - handle different formats
+  const userId = currentUser.id || currentUser.username || currentUser.name;
+  const projectName = currentProject.name || 'Unknown Project';
+  
+  if (!userId || !projectName) {
+    console.warn('Missing user ID or project name for loading chart settings');
+    console.log('User ID:', userId);
+    console.log('Project name:', projectName);
     return;
   }
   
@@ -203,9 +226,9 @@ function loadChartSettings() {
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
-      user_id: currentUser.username || currentUser.id || currentUser.name,
+      user_id: userId,
       project_id: currentProject.id || 'unknown',
-      project_name: currentProject.name || 'Unknown Project',
+      project_name: projectName,
       action: 'load'
     }),
     success: function(response) {

@@ -62,53 +62,54 @@
                 id: 'proj_test_456'
             };
             
-            // Save to localStorage
-            localStorage.setItem('currentUser', JSON.stringify(testUser));
-            localStorage.setItem('currentProject', JSON.stringify(testProject));
+            // Save to separate test storage to avoid overwriting real user data
+            localStorage.setItem('testUser', JSON.stringify(testUser));
+            localStorage.setItem('testProject', JSON.stringify(testProject));
             
-            // Set global variables
-            window.currentUser = testUser;
-            window.currentProject = testProject;
+            // Set global variables for testing
+            window.testUser = testUser;
+            window.testProject = testProject;
             
-            $('#setupResult').removeClass('error').addClass('success').show().text('Test data setup complete!');
+            $('#setupResult').removeClass('error').addClass('success').show().text('Test data setup complete! (Using separate test storage)');
             showDebugInfo();
         }
         
-        // Test saving chart settings
-        function testSaveSettings() {
-            const testSettings = {
-                selectedColumns: ['AGE', 'INCOME', 'STATUS'],
-                theme: 'default',
-                chartConfigs: {
-                    'AGE': {
-                        type: 'bar',
-                        isMultiColumn: false,
-                        multiColumns: [],
-                        color: '#ff6384'
-                    },
-                    'INCOME': {
-                        type: 'pie',
-                        isMultiColumn: true,
-                        multiColumns: ['STATUS'],
-                        color: '#36a2eb'
-                    }
-                },
-                filterSettings: {
-                    'AGE': ['25-34', '35-44'],
-                    'STATUS': ['Active']
-                },
-                timestamp: new Date().toISOString(),
-                projectName: 'Test Project',
-                projectId: 'proj_test_456'
-            };
-            
-            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
-            
-            if (!currentUser.username || !currentProject.name) {
-                $('#saveResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
-                return;
-            }
+                 // Test saving chart settings
+         function testSaveSettings() {
+             const testSettings = {
+                 selectedColumns: ['AGE', 'INCOME', 'STATUS'],
+                 theme: 'default',
+                 chartConfigs: {
+                     'AGE': {
+                         type: 'bar',
+                         isMultiColumn: false,
+                         multiColumns: [],
+                         color: '#ff6384'
+                     },
+                     'INCOME': {
+                         type: 'pie',
+                         isMultiColumn: true,
+                         multiColumns: ['STATUS'],
+                         color: '#36a2eb'
+                     }
+                 },
+                 filterSettings: {
+                     'AGE': ['25-34', '35-44'],
+                     'STATUS': ['Active']
+                 },
+                 timestamp: new Date().toISOString(),
+                 projectName: 'Test Project',
+                 projectId: 'proj_test_456'
+             };
+             
+             // Use test data specifically
+             const currentUser = window.testUser || JSON.parse(localStorage.getItem('testUser') || '{}');
+             const currentProject = window.testProject || JSON.parse(localStorage.getItem('testProject') || '{}');
+             
+             if (!currentUser.username || !currentProject.name) {
+                 $('#saveResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
+                 return;
+             }
             
             $.ajax({
                                  url: 'simple_chart_settings.php',
@@ -143,15 +144,16 @@
             });
         }
         
-        // Test loading chart settings
-        function testLoadSettings() {
-            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
-            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
-            
-            if (!currentUser.username || !currentProject.name) {
-                $('#loadResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
-                return;
-            }
+                 // Test loading chart settings
+         function testLoadSettings() {
+             // Use test data specifically
+             const currentUser = window.testUser || JSON.parse(localStorage.getItem('testUser') || '{}');
+             const currentProject = window.testProject || JSON.parse(localStorage.getItem('testProject') || '{}');
+             
+             if (!currentUser.username || !currentProject.name) {
+                 $('#loadResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
+                 return;
+             }
             
                          $.ajax({
                  url: 'simple_chart_settings.php',
@@ -185,18 +187,22 @@
             });
         }
         
-        // Show current debug information
-        function showDebugInfo() {
-            const debugInfo = {
-                localStorage_currentUser: localStorage.getItem('currentUser'),
-                localStorage_currentProject: localStorage.getItem('currentProject'),
-                window_currentUser: window.currentUser,
-                window_currentProject: window.currentProject,
-                timestamp: new Date().toISOString()
-            };
-            
-            updateDebugOutput('CURRENT STATE', debugInfo);
-        }
+                 // Show current debug information
+         function showDebugInfo() {
+             const debugInfo = {
+                 localStorage_currentUser: localStorage.getItem('currentUser'),
+                 localStorage_currentProject: localStorage.getItem('currentProject'),
+                 localStorage_testUser: localStorage.getItem('testUser'),
+                 localStorage_testProject: localStorage.getItem('testProject'),
+                 window_currentUser: window.currentUser,
+                 window_currentProject: window.currentProject,
+                 window_testUser: window.testUser,
+                 window_testProject: window.testProject,
+                 timestamp: new Date().toISOString()
+             };
+             
+             updateDebugOutput('CURRENT STATE', debugInfo);
+         }
         
         // Update debug output
         function updateDebugOutput(title, data) {
@@ -205,9 +211,10 @@
             $('#debugOutput').text(newOutput);
         }
         
-        // Check filesystem structure
-        function checkFilesystem() {
-            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+                 // Check filesystem structure
+         function checkFilesystem() {
+             // Use real user data for filesystem check
+             const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
             
             $.ajax({
                 url: 'debug_filesystem.php',

@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Real User Chart Settings</title>
+    <link rel="icon" href="data:,">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .debug-output { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Test Chart Settings with Real User Data</h1>
+
+    <div class="section">
+        <h3>Current User & Project Info</h3>
+        <div id="userInfo" class="debug-output"></div>
+        <button class="btn btn-primary" onclick="showUserInfo()">Refresh User Info</button>
+    </div>
+
+    <div class="section">
+        <h3>Test Save Chart Settings</h3>
+        <button class="btn btn-success" onclick="testSaveSettings()">Save Test Chart Settings</button>
+        <div id="saveResult" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h3>Test Load Chart Settings</h3>
+        <button class="btn btn-warning" onclick="testLoadSettings()">Load Chart Settings</button>
+        <div id="loadResult" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h3>Debug Output</h3>
+        <div id="debugOutput" class="debug-output"></div>
+    </div>
+
+    <script>
+        function showUserInfo() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userInfo = {
+                currentUser: currentUser,
+                currentProject: currentProject,
+                userId: currentUser.id || currentUser.username || currentUser.name,
+                projectName: currentProject.name || 'Unknown Project',
+                timestamp: new Date().toISOString()
+            };
+            
+            $('#userInfo').text(JSON.stringify(userInfo, null, 2));
+        }
+        
+        function testSaveSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || 'Unknown Project';
+            
+            if (!userId || !projectName) {
+                $('#saveResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
+                updateDebugOutput('SAVE ERROR', {userId, projectName, currentUser, currentProject});
+                return;
+            }
+            
+            const testSettings = {
+                selectedColumns: ['AGE', 'INCOME', 'STATUS'],
+                theme: 'default',
+                chartConfigs: {
+                    'AGE': {
+                        type: 'bar',
+                        isMultiColumn: false,
+                        multiColumns: [],
+                        color: '#ff6384'
+                    }
+                },
+                filterSettings: {
+                    'AGE': ['25-34', '35-44']
+                },
+                timestamp: new Date().toISOString(),
+                projectName: projectName,
+                projectId: currentProject.id || 'unknown'
+            };
+            
+            $.ajax({
+                url: 'simple_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    project_id: currentProject.id || 'unknown',
+                    project_name: projectName,
+                    action: 'save',
+                    settings: testSettings
+                }),
+                success: function(response) {
+                    console.log('Save response:', response);
+                    if (response.success) {
+                        $('#saveResult').removeClass('error').addClass('success').show().text('Chart settings saved successfully!');
+                    } else {
+                        $('#saveResult').removeClass('success').addClass('error').show().text('Save failed: ' + response.message);
+                    }
+                    updateDebugOutput('SAVE RESPONSE', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Save error:', error, xhr.responseText);
+                    $('#saveResult').removeClass('success').addClass('error').show().text('Save error: ' + error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        updateDebugOutput('SAVE ERROR', errorResponse);
+                    } catch (e) {
+                        updateDebugOutput('SAVE ERROR', {error: error, response: xhr.responseText});
+                    }
+                }
+            });
+        }
+        
+        function testLoadSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || 'Unknown Project';
+            
+            if (!userId || !projectName) {
+                $('#loadResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
+                updateDebugOutput('LOAD ERROR', {userId, projectName, currentUser, currentProject});
+                return;
+            }
+            
+            $.ajax({
+                url: 'simple_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    project_id: currentProject.id || 'unknown',
+                    project_name: projectName,
+                    action: 'load'
+                }),
+                success: function(response) {
+                    console.log('Load response:', response);
+                    if (response.success && response.settings) {
+                        $('#loadResult').removeClass('error').addClass('success').show().text('Chart settings loaded successfully!');
+                    } else {
+                        $('#loadResult').removeClass('success').addClass('error').show().text('Load result: ' + response.message);
+                    }
+                    updateDebugOutput('LOAD RESPONSE', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Load error:', error, xhr.responseText);
+                    $('#loadResult').removeClass('success').addClass('error').show().text('Load error: ' + error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        updateDebugOutput('LOAD ERROR', errorResponse);
+                    } catch (e) {
+                        updateDebugOutput('LOAD ERROR', {error: error, response: xhr.responseText});
+                    }
+                }
+            });
+        }
+        
+        function updateDebugOutput(title, data) {
+            const current = $('#debugOutput').text();
+            const newOutput = `${title} (${new Date().toLocaleTimeString()}):\n${JSON.stringify(data, null, 2)}\n\n${current}`;
+            $('#debugOutput').text(newOutput);
+        }
+        
+        // Initialize
+        $(document).ready(function() {
+            showUserInfo();
+        });
+    </script>
+</body>
+</html>
