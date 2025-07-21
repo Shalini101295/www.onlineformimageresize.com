@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Save → Load Chart Settings</title>
+    <link rel="icon" href="data:,">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .code { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; font-size: 11px; max-height: 400px; overflow-y: auto; }
+        .highlight { background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Test Save → Load Chart Settings</h1>
+
+    <div class="section">
+        <h3>Current User & Project</h3>
+        <div id="userProjectInfo" class="code"></div>
+        <button class="btn btn-primary" onclick="showUserProjectInfo()">Refresh Info</button>
+    </div>
+
+    <div class="section">
+        <h3>Step 1: Save Chart Settings</h3>
+        <button class="btn btn-success" onclick="testSaveChartSettings()">Save Test Settings</button>
+        <div id="saveResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>Step 2: Load Chart Settings</h3>
+        <button class="btn btn-warning" onclick="testLoadChartSettings()">Load Settings</button>
+        <div id="loadResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>Step 3: Save → Load Test</h3>
+        <button class="btn btn-primary" onclick="testSaveThenLoad()">Save Then Load (Full Test)</button>
+        <div id="fullTestResult" class="code"></div>
+    </div>
+
+    <script>
+        function showUserProjectInfo() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            const info = {
+                currentUser: currentUser,
+                currentProject: currentProject,
+                extractedUserId: userId,
+                extractedProjectName: projectName,
+                validationWillPass: !!(userId && projectName && projectName !== 'Unknown Project')
+            };
+            
+            $('#userProjectInfo').text(JSON.stringify(info, null, 2));
+        }
+
+        function testSaveChartSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            const testSettings = {
+                selectedColumns: ['TEST_COLUMN_1', 'TEST_COLUMN_2'],
+                theme: 'test_theme',
+                chartConfigs: {
+                    'TEST_COLUMN_1': {
+                        type: 'bar',
+                        isMultiColumn: false,
+                        color: '#ff0000'
+                    }
+                },
+                filterSettings: {
+                    'TEST_COLUMN_1': ['test_filter_1', 'test_filter_2']
+                },
+                timestamp: new Date().toISOString(),
+                test_save_marker: 'SAVE_TEST_' + Date.now()
+            };
+            
+            $('#saveResult').text('SENDING SAVE REQUEST...\n\n');
+            
+            $.ajax({
+                url: 'debug_chart_settings_detailed.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    project_id: currentProject.id || 'unknown',
+                    project_name: projectName,
+                    action: 'save',
+                    settings: testSettings
+                }),
+                success: function(response) {
+                    $('#saveResult').text('SAVE SUCCESS:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#saveResult').text('SAVE ERROR:\n' + error + '\n\nResponse:\n' + xhr.responseText);
+                }
+            });
+        }
+
+        function testLoadChartSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            $('#loadResult').text('SENDING LOAD REQUEST...\n\n');
+            
+            $.ajax({
+                url: 'debug_chart_settings_detailed.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    project_id: currentProject.id || 'unknown',
+                    project_name: projectName,
+                    action: 'load'
+                }),
+                success: function(response) {
+                    $('#loadResult').text('LOAD SUCCESS:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#loadResult').text('LOAD ERROR:\n' + error + '\n\nResponse:\n' + xhr.responseText);
+                }
+            });
+        }
+
+        function testSaveThenLoad() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            const testId = Date.now();
+            const testSettings = {
+                selectedColumns: ['FULL_TEST_COLUMN'],
+                theme: 'full_test_theme',
+                test_marker: 'FULL_TEST_' + testId,
+                timestamp: new Date().toISOString()
+            };
+            
+            $('#fullTestResult').text('=== FULL SAVE → LOAD TEST ===\n\n');
+            $('#fullTestResult').append('Step 1: Saving test settings...\n\n');
+            
+            // First save
+            $.ajax({
+                url: 'debug_chart_settings_detailed.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId,
+                    project_id: currentProject.id || 'unknown',
+                    project_name: projectName,
+                    action: 'save',
+                    settings: testSettings
+                }),
+                success: function(saveResponse) {
+                    $('#fullTestResult').append('SAVE RESULT:\n' + JSON.stringify(saveResponse, null, 2) + '\n\n');
+                    
+                    if (saveResponse.success) {
+                        $('#fullTestResult').append('Step 2: Loading saved settings...\n\n');
+                        
+                        // Then load
+                        $.ajax({
+                            url: 'debug_chart_settings_detailed.php',
+                            method: 'POST',
+                            contentType: 'application/json',
+                            data: JSON.stringify({
+                                user_id: userId,
+                                project_id: currentProject.id || 'unknown',
+                                project_name: projectName,
+                                action: 'load'
+                            }),
+                            success: function(loadResponse) {
+                                $('#fullTestResult').append('LOAD RESULT:\n' + JSON.stringify(loadResponse, null, 2) + '\n\n');
+                                
+                                // Compare results
+                                if (loadResponse.success && loadResponse.settings) {
+                                    if (loadResponse.settings.test_marker === testSettings.test_marker) {
+                                        $('#fullTestResult').append('✅ SUCCESS: Saved and loaded the same data!\n');
+                                        $('#fullTestResult').append('Test marker match: ' + loadResponse.settings.test_marker + '\n');
+                                    } else {
+                                        $('#fullTestResult').append('❌ MISMATCH: Loaded different data than saved\n');
+                                        $('#fullTestResult').append('Saved marker: ' + testSettings.test_marker + '\n');
+                                        $('#fullTestResult').append('Loaded marker: ' + (loadResponse.settings.test_marker || 'MISSING') + '\n');
+                                    }
+                                } else {
+                                    $('#fullTestResult').append('❌ LOAD FAILED: Could not load saved settings\n');
+                                }
+                            },
+                            error: function(xhr, status, error) {
+                                $('#fullTestResult').append('❌ LOAD ERROR: ' + error + '\n' + xhr.responseText + '\n');
+                            }
+                        });
+                    } else {
+                        $('#fullTestResult').append('❌ SAVE FAILED: Cannot proceed to load test\n');
+                    }
+                },
+                error: function(xhr, status, error) {
+                    $('#fullTestResult').append('❌ SAVE ERROR: ' + error + '\n' + xhr.responseText + '\n');
+                }
+            });
+        }
+
+        // Auto-load user info
+        $(document).ready(function() {
+            showUserProjectInfo();
+        });
+    </script>
+</body>
+</html>
