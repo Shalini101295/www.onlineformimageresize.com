@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Chart Settings vs File Loader Logic</title>
+    <link rel="icon" href="data:,">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .code { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; font-size: 12px; }
+        .highlight { background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Test Chart Settings vs File Loader Logic</h1>
+
+    <div class="section">
+        <h3>1. Test File Loader Logic (Working)</h3>
+        <button class="btn btn-primary" onclick="testFileLoader()">Test File Loader</button>
+        <div id="fileLoaderResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Test Chart Settings Logic (Updated)</h3>
+        <button class="btn btn-success" onclick="testChartSettings()">Test Chart Settings Save</button>
+        <div id="chartSettingsResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Comparison Results</h3>
+        <button class="btn btn-warning" onclick="compareResults()">Compare Both Results</button>
+        <div id="comparisonResult" class="code"></div>
+    </div>
+
+    <script>
+        let fileLoaderData = null;
+        let chartSettingsData = null;
+
+        function testFileLoader() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectId = currentProject.id;
+            
+            $.ajax({
+                url: 'quick_file_loader.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    action: 'scan_user_files',
+                    user_id: userId,
+                    filter_project_id: projectId
+                }),
+                success: function(response) {
+                    fileLoaderData = response;
+                    $('#fileLoaderResult').text(JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#fileLoaderResult').text('ERROR: ' + error + '\n' + xhr.responseText);
+                }
+            });
+        }
+
+        function testChartSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            const testData = {
+                user_id: userId,
+                project_id: currentProject.id || 'unknown',
+                project_name: projectName,
+                action: 'save',
+                settings: {
+                    test: true,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            $('#chartSettingsResult').text('SENDING:\n' + JSON.stringify(testData, null, 2) + '\n\n');
+            
+            $.ajax({
+                url: 'simple_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(testData),
+                success: function(response) {
+                    chartSettingsData = response;
+                    $('#chartSettingsResult').append('RESPONSE:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#chartSettingsResult').append('ERROR: ' + error + '\n' + xhr.responseText);
+                }
+            });
+        }
+
+        function compareResults() {
+            let comparison = '';
+            
+            comparison += '=== COMPARISON ANALYSIS ===\n\n';
+            
+            if (fileLoaderData) {
+                comparison += '1. FILE LOADER RESULTS:\n';
+                comparison += `   - Success: ${fileLoaderData.success}\n`;
+                comparison += `   - Total Projects: ${fileLoaderData.total_projects || 0}\n`;
+                comparison += `   - User Dirs Found: ${fileLoaderData.user_dirs_found ? fileLoaderData.user_dirs_found.length : 0}\n`;
+                
+                if (fileLoaderData.projects && fileLoaderData.projects.length > 0) {
+                    comparison += '   - Found Projects:\n';
+                    fileLoaderData.projects.forEach((project, index) => {
+                        comparison += `     ${index + 1}. ${project.name} (${project.user_dir})\n`;
+                        comparison += `        Path: ${project.path}\n`;
+                        comparison += `        Files: ${project.files ? project.files.length : 0}\n`;
+                    });
+                }
+                comparison += '\n';
+            } else {
+                comparison += '1. FILE LOADER RESULTS: Not tested yet\n\n';
+            }
+            
+            if (chartSettingsData) {
+                comparison += '2. CHART SETTINGS RESULTS:\n';
+                comparison += `   - Success: ${chartSettingsData.success}\n`;
+                comparison += `   - Message: ${chartSettingsData.message}\n`;
+                
+                if (chartSettingsData.project_dir) {
+                    comparison += `   - Found Project Dir: ${chartSettingsData.project_dir}\n`;
+                } else if (chartSettingsData.error) {
+                    comparison += `   - Error: ${chartSettingsData.error}\n`;
+                }
+                comparison += '\n';
+            } else {
+                comparison += '2. CHART SETTINGS RESULTS: Not tested yet\n\n';
+            }
+            
+            if (fileLoaderData && chartSettingsData) {
+                comparison += '3. ANALYSIS:\n';
+                
+                const fileLoaderFound = fileLoaderData.success && fileLoaderData.total_projects > 0;
+                const chartSettingsFound = chartSettingsData.success;
+                
+                if (fileLoaderFound && chartSettingsFound) {
+                    comparison += '   ✅ BOTH SYSTEMS FOUND PROJECT DIRECTORIES\n';
+                    
+                    if (fileLoaderData.projects && fileLoaderData.projects.length > 0) {
+                        const fileLoaderPath = fileLoaderData.projects[0].path;
+                        const chartSettingsPath = chartSettingsData.project_dir;
+                        
+                        if (fileLoaderPath === chartSettingsPath) {
+                            comparison += '   ✅ BOTH SYSTEMS FOUND THE SAME PROJECT PATH\n';
+                            comparison += `   Path: ${fileLoaderPath}\n`;
+                        } else {
+                            comparison += '   ⚠️  SYSTEMS FOUND DIFFERENT PATHS:\n';
+                            comparison += `   File Loader: ${fileLoaderPath}\n`;
+                            comparison += `   Chart Settings: ${chartSettingsPath}\n`;
+                        }
+                    }
+                } else if (fileLoaderFound && !chartSettingsFound) {
+                    comparison += '   ❌ FILE LOADER WORKS BUT CHART SETTINGS FAILS\n';
+                    comparison += '   Chart settings logic needs more work\n';
+                } else if (!fileLoaderFound && chartSettingsFound) {
+                    comparison += '   ❌ CHART SETTINGS WORKS BUT FILE LOADER FAILS\n';
+                    comparison += '   This is unexpected - file loader should work\n';
+                } else {
+                    comparison += '   ❌ BOTH SYSTEMS FAILED TO FIND PROJECT\n';
+                    comparison += '   Check user/project data and directory structure\n';
+                }
+            }
+            
+            $('#comparisonResult').text(comparison);
+        }
+
+        // Auto-load current data
+        $(document).ready(function() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            $('#comparisonResult').text('Current User: ' + JSON.stringify(currentUser, null, 2) + '\n\nCurrent Project: ' + JSON.stringify(currentProject, null, 2));
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Settings - File Loader Logic Integration</title>
+    <link rel="icon" href="data:,">
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 1000px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .success { border-left: 4px solid #28a745; }
+        .warning { border-left: 4px solid #ffc107; }
+        .error { border-left: 4px solid #dc3545; }
+        .info { border-left: 4px solid #17a2b8; }
+        .code { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; font-size: 14px; }
+        .highlight { background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0; }
+        .test-btn { background: #007bff; color: white; border: none; padding: 10px 20px; border-radius: 5px; margin: 5px; cursor: pointer; }
+        .test-btn:hover { background: #0056b3; }
+    </style>
+</head>
+<body>
+    <h1>🔄 Chart Settings - File Loader Logic Integration</h1>
+
+    <div class="section success">
+        <h3>✅ SOLUTION: USE EXACT SAME LOGIC AS WORKING FILE LOADER</h3>
+        
+        <div class="highlight">
+            <h4>Problem Identified:</h4>
+            <p>Chart settings backend was using different directory scanning logic than the working project file loader</p>
+        </div>
+        
+        <div class="highlight">
+            <h4>Solution Implemented:</h4>
+            <p>Copied the exact same directory scanning and matching logic from <code>quick_file_loader.php</code> to <code>simple_chart_settings.php</code></p>
+        </div>
+    </div>
+
+    <div class="section info">
+        <h3>🔄 LOGIC COPIED FROM WORKING FILE LOADER</h3>
+        
+        <div class="highlight">
+            <h4>1. User Pattern Extraction (Same as File Loader):</h4>
+        </div>
+        
+        <div class="code">
+// Extract potential user identifiers from user_id
+$user_patterns = [];
+
+// Extract numbers (e.g., 1752911380, 4206 from user_1752911380_4206)
+preg_match_all('/\d+/', $user_id, $numbers);
+foreach ($numbers[0] as $number) {
+    $user_patterns[] = $number;
+}
+
+// Extract name parts (e.g., shashank, sinha from shashank_sinha_0_4206)  
+$name_parts = explode('_', $user_id);
+foreach ($name_parts as $part) {
+    if (!empty($part) && !is_numeric($part)) {
+        $user_patterns[] = $part;
+    }
+}
+
+// Also add the full user_id
+$user_patterns[] = $user_id;
+        </div>
+        
+        <div class="highlight">
+            <h4>2. User Directory Matching (Same as File Loader):</h4>
+        </div>
+        
+        <div class="code">
+// Check if user directory matches any of our patterns
+$is_match = false;
+foreach ($user_patterns as $pattern) {
+    if (strpos(strtolower($user_dir), strtolower($pattern)) !== false) {
+        $is_match = true;
+        break;
+    }
+}
+
+// Skip directory if no pattern match
+if (!empty($user_patterns) && count($user_patterns) > 1 && !$is_match) {
+    continue;
+}
+        </div>
+        
+        <div class="highlight">
+            <h4>3. Project Metadata Checking (Same as File Loader):</h4>
+        </div>
+        
+        <div class="code">
+// Check project metadata for accurate filtering
+$metadata_file = $project_path . '/project_metadata.json';
+$project_metadata = null;
+if (file_exists($metadata_file)) {
+    $metadata_content = file_get_contents($metadata_file);
+    $project_metadata = json_decode($metadata_content, true);
+}
+
+// Try project ID match first (most accurate)
+if ($project_metadata && isset($project_metadata['id'])) {
+    if ($project_metadata['id'] === $project_name) {
+        $include_project = true;
+    }
+}
+        </div>
+        
+        <div class="highlight">
+            <h4>4. Directory Name Matching (Same as File Loader):</h4>
+        </div>
+        
+        <div class="code">
+// If no metadata match, try directory name matching
+$include_project = (
+    // Exact match
+    $project_dir_lower === $project_name_lower ||
+    // Directory contains filter AND filter is substantial (>3 chars)
+    (strlen($project_name) > 3 && strpos($project_dir_lower, $project_name_lower) !== false) ||
+    // Filter contains directory name AND directory name is substantial
+    (strlen($project_dir) > 3 && strpos($project_name_lower, $project_dir_lower) !== false)
+);
+        </div>
+    </div>
+
+    <div class="section warning">
+        <h3>🧪 TESTING & VERIFICATION</h3>
+        
+        <div class="highlight">
+            <h4>Comparison Test Tool:</h4>
+        </div>
+        
+        <button class="test-btn" onclick="window.open('test_chart_settings_with_file_loader_logic.html', '_blank')">
+            Test File Loader vs Chart Settings Logic
+        </button>
+        
+        <p>This tool will:</p>
+        <ul>
+            <li>Test the working file loader with your user/project data</li>
+            <li>Test the updated chart settings backend with the same data</li>
+            <li>Compare results to ensure they find the same project directories</li>
+            <li>Show detailed analysis of what each system found</li>
+        </ul>
+        
+        <div class="highlight">
+            <h4>Expected Test Results:</h4>
+        </div>
+        
+        <div class="code">
+✅ FILE LOADER RESULTS:
+   - Success: true
+   - Total Projects: 1
+   - Found Project: Project_2_proj_1752994236_8417
+   - Path: user_projects/shashank_sinha_0_4206/Project_2_proj_1752994236_8417
+
+✅ CHART SETTINGS RESULTS:
+   - Success: true
+   - Message: Chart settings saved successfully
+   - Found Project Dir: user_projects/shashank_sinha_0_4206/Project_2_proj_1752994236_8417
+
+✅ ANALYSIS: BOTH SYSTEMS FOUND THE SAME PROJECT PATH
+        </div>
+    </div>
+
+    <div class="section info">
+        <h3>🔍 WHY THIS SHOULD WORK NOW</h3>
+        
+        <div class="highlight">
+            <h4>Your Data Pattern:</h4>
+        </div>
+        
+        <div class="code">
+User ID: user_1752911380_4206
+Project Name: proj_1752994236_8417
+
+EXTRACTED PATTERNS:
+- Numbers: [1752911380, 4206]
+- Full ID: user_1752911380_4206
+
+USER DIRECTORY MATCH:
+- shashank_sinha_0_4206 contains "4206" ✅
+
+PROJECT DIRECTORY MATCH:  
+- Project_2_proj_1752994236_8417 contains "proj_1752994236_8417" ✅
+
+RESULT: Should find user_projects/shashank_sinha_0_4206/Project_2_proj_1752994236_8417/
+        </div>
+        
+        <div class="highlight">
+            <h4>Workflow Comparison:</h4>
+        </div>
+        
+        <div class="code">
+PROJECT FILES LOADING (Working):
+user_1752911380_4206 → finds shashank_sinha_0_4206 → finds Project_2_proj_1752994236_8417 ✅
+
+CHART SETTINGS (Now Using Same Logic):
+user_1752911380_4206 → finds shashank_sinha_0_4206 → finds Project_2_proj_1752994236_8417 ✅
+        </div>
+    </div>
+
+    <div class="section success">
+        <h3>📋 FILES UPDATED</h3>
+        
+        <div class="highlight">
+            <h4>Backend Update:</h4>
+        </div>
+        
+        <ul>
+            <li><code>simple_chart_settings.php</code> - Now uses identical logic to <code>quick_file_loader.php</code></li>
+        </ul>
+        
+        <div class="highlight">
+            <h4>Key Changes Made:</h4>
+        </div>
+        
+        <ul>
+            <li>✅ <strong>User Pattern Extraction:</strong> Same number and name pattern extraction</li>
+            <li>✅ <strong>Directory Scanning:</strong> Same comprehensive directory scanning</li>
+            <li>✅ <strong>User Matching:</strong> Same pattern-based user directory matching</li>
+            <li>✅ <strong>Project Metadata:</strong> Same metadata.json checking</li>
+            <li>✅ <strong>Project Matching:</strong> Same exact/contains/substantial length matching</li>
+        </ul>
+        
+        <div class="highlight">
+            <h4>Test Tools Created:</h4>
+        </div>
+        
+        <ul>
+            <li><code>test_chart_settings_with_file_loader_logic.html</code> - Compare both systems side by side</li>
+        </ul>
+    </div>
+
+    <div class="section success">
+        <h3>🎯 EXPECTED RESULTS</h3>
+        
+        <div class="highlight">
+            <h4>Chart Settings Should Now:</h4>
+        </div>
+        
+        <ul>
+            <li>✅ <strong>Find the same project directory</strong> as the working file loader</li>
+            <li>✅ <strong>Save chart_settings.json</strong> in the correct project folder</li>
+            <li>✅ <strong>Load saved settings</strong> from the same project folder</li>
+            <li>✅ <strong>Work consistently</strong> with the file loading system</li>
+        </ul>
+        
+        <div class="highlight">
+            <h4>Console Messages Should Show:</h4>
+        </div>
+        
+        <div class="code">
+✅ Loading chart settings for project: proj_1752994236_8417
+✅ Chart settings saved successfully!
+✅ Chart settings loaded successfully!
+
+❌ NO MORE: "No project directory found"
+❌ NO MORE: "Project directory not found for user"
+        </div>
+    </div>
+
+    <div class="section info">
+        <h3>🚀 NEXT STEPS</h3>
+        
+        <ol>
+            <li><strong>Run the comparison test</strong> to verify both systems find the same directory</li>
+            <li><strong>Hard refresh Excel Visualizer</strong> (Ctrl+F5) to load updated backend</li>
+            <li><strong>Test save/load chart settings</strong> in the main application</li>
+            <li><strong>Verify auto-save/load</strong> works when opening Excel files</li>
+        </ol>
+        
+        <div class="highlight">
+            <p><strong>🎉 Chart settings should now work exactly the same way as the working project file loader!</strong></p>
+        </div>
+    </div>
+
+</body>
+</html>

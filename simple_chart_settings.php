@@ -24,38 +24,115 @@ try {
         throw new Exception('Missing user_id or project_name');
     }
     
-    // Simple approach: scan all user directories for matching pattern
+    // Use the same logic as quick_file_loader.php for consistency
     $base_dir = 'user_projects';
     $found_project_dir = null;
     
+    // Find ALL user directories and scan them all (same as quick_file_loader.php)
+    $user_dirs = [];
+    
     if (is_dir($base_dir)) {
-        $user_dirs = scandir($base_dir);
-        foreach ($user_dirs as $user_dir) {
-            if ($user_dir === '.' || $user_dir === '..') continue;
-            $user_path = "$base_dir/$user_dir";
-            if (!is_dir($user_path)) continue;
+        $dirs = scandir($base_dir);
+        foreach ($dirs as $dir) {
+            if ($dir === '.' || $dir === '..') continue;
+            $user_dirs[] = $dir;
+        }
+    }
+    
+    // Extract potential user identifiers from the provided user_id (same as quick_file_loader.php)
+    $user_patterns = [];
+    
+    // Extract numbers from user_id (e.g., 1752911380, 4206)
+    preg_match_all('/\d+/', $user_id, $numbers);
+    if (!empty($numbers[0])) {
+        foreach ($numbers[0] as $number) {
+            $user_patterns[] = $number;
+        }
+    }
+    
+    // Extract name parts (e.g., from shashank_sinha_0_4206)
+    $name_parts = explode('_', $user_id);
+    foreach ($name_parts as $part) {
+        if (!empty($part) && !is_numeric($part)) {
+            $user_patterns[] = $part;
+        }
+    }
+    
+    // Also add the full user_id
+    $user_patterns[] = $user_id;
+    
+    // Scan each user directory for projects (same as quick_file_loader.php)
+    foreach ($user_dirs as $user_dir) {
+        $user_path = $base_dir . '/' . $user_dir;
+        
+        // Check if this user directory matches any of our patterns
+        $is_match = false;
+        foreach ($user_patterns as $pattern) {
+            if (strpos(strtolower($user_dir), strtolower($pattern)) !== false) {
+                $is_match = true;
+                break;
+            }
+        }
+        
+        // If no pattern match and we have specific patterns, skip this directory
+        if (!empty($user_patterns) && count($user_patterns) > 1 && !$is_match) {
+            continue;
+        }
+        
+        if (is_dir($user_path)) {
+            $project_dirs = scandir($user_path);
             
-            // Check if this user directory matches our user
-            if (strpos($user_dir, $user_id) !== false || strpos($user_id, $user_dir) !== false) {
-                // Look for project directories in this user folder
-                $project_dirs = scandir($user_path);
-                foreach ($project_dirs as $project_dir) {
-                    if ($project_dir === '.' || $project_dir === '..') continue;
-                    $project_path = "$user_path/$project_dir";
-                    if (!is_dir($project_path)) continue;
+            foreach ($project_dirs as $project_dir) {
+                if ($project_dir === '.' || $project_dir === '..') continue;
+                
+                $project_path = $user_path . '/' . $project_dir;
+                
+                if (is_dir($project_path)) {
+                    // Apply project filter using the same logic as quick_file_loader.php
+                    $include_project = false;
                     
-                    // Check if this project directory matches our project
-                    $project_name_clean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($project_name));
-                    $project_dir_clean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($project_dir));
+                    // Check project metadata for more accurate filtering
+                    $metadata_file = $project_path . '/project_metadata.json';
+                    $project_metadata = null;
+                    if (file_exists($metadata_file)) {
+                        $metadata_content = file_get_contents($metadata_file);
+                        $project_metadata = json_decode($metadata_content, true);
+                    }
                     
-                    // Multiple matching strategies
-                    if (strpos($project_dir_clean, $project_name_clean) !== false || 
-                        strpos($project_name_clean, $project_dir_clean) !== false ||
-                        stripos($project_dir, $project_name) !== false ||
-                        // Also try matching project ID patterns
-                        (strlen($project_name) > 5 && strpos($project_dir, $project_name) !== false) ||
-                        // Match if project name contains part of directory name
-                        (strlen($project_name_clean) > 3 && strpos($project_dir_clean, $project_name_clean) !== false)) {
+                    // Try project ID match first (most accurate)
+                    if ($project_metadata && isset($project_metadata['id'])) {
+                        if ($project_metadata['id'] === $project_name) {
+                            $include_project = true;
+                        }
+                    }
+                    
+                    // If no ID match, try name matching
+                    if (!$include_project) {
+                        $project_dir_lower = strtolower($project_dir);
+                        $project_name_lower = strtolower($project_name);
+                        
+                        // Check metadata name first
+                        if ($project_metadata && isset($project_metadata['name'])) {
+                            $metadata_name_lower = strtolower($project_metadata['name']);
+                            if ($metadata_name_lower === $project_name_lower) {
+                                $include_project = true;
+                            }
+                        }
+                        
+                        // If no metadata match, try directory name matching
+                        if (!$include_project) {
+                            $include_project = (
+                                // Exact match
+                                $project_dir_lower === $project_name_lower ||
+                                // Directory contains filter AND filter is substantial (>3 chars)
+                                (strlen($project_name) > 3 && strpos($project_dir_lower, $project_name_lower) !== false) ||
+                                // Filter contains directory name AND directory name is substantial
+                                (strlen($project_dir) > 3 && strpos($project_name_lower, $project_dir_lower) !== false)
+                            );
+                        }
+                    }
+                    
+                    if ($include_project) {
                         $found_project_dir = $project_path;
                         break 2; // Break out of both loops
                     }
