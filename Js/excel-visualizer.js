@@ -101,12 +101,15 @@ function saveChartSettings() {
   
   // Extract the actual user ID - handle different formats
   const userId = currentUser.id || currentUser.username || currentUser.name;
-  const projectName = currentProject.name || 'Unknown Project';
+  // Use project ID as name if name is missing
+  const projectName = currentProject.name || currentProject.id || 'Unknown Project';
   
-  if (!userId || !projectName) {
+  if (!userId || !projectName || projectName === 'Unknown Project') {
     console.warn('Missing user ID or project name for saving chart settings');
     console.log('User ID:', userId);
     console.log('Project name:', projectName);
+    console.log('Current user:', currentUser);
+    console.log('Current project:', currentProject);
     alert('Unable to save chart settings. Missing user ID or project name.');
     return;
   }
@@ -210,12 +213,15 @@ function loadChartSettings() {
   
   // Extract the actual user ID - handle different formats
   const userId = currentUser.id || currentUser.username || currentUser.name;
-  const projectName = currentProject.name || 'Unknown Project';
+  // Use project ID as name if name is missing
+  const projectName = currentProject.name || currentProject.id || 'Unknown Project';
   
-  if (!userId || !projectName) {
+  if (!userId || !projectName || projectName === 'Unknown Project') {
     console.warn('Missing user ID or project name for loading chart settings');
     console.log('User ID:', userId);
     console.log('Project name:', projectName);
+    console.log('Current user:', currentUser);
+    console.log('Current project:', currentProject);
     return;
   }
   

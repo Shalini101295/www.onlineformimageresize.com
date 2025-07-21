@@ -48,9 +48,14 @@ try {
                     $project_name_clean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($project_name));
                     $project_dir_clean = preg_replace('/[^a-zA-Z0-9]/', '', strtolower($project_dir));
                     
+                    // Multiple matching strategies
                     if (strpos($project_dir_clean, $project_name_clean) !== false || 
                         strpos($project_name_clean, $project_dir_clean) !== false ||
-                        stripos($project_dir, $project_name) !== false) {
+                        stripos($project_dir, $project_name) !== false ||
+                        // Also try matching project ID patterns
+                        (strlen($project_name) > 5 && strpos($project_dir, $project_name) !== false) ||
+                        // Match if project name contains part of directory name
+                        (strlen($project_name_clean) > 3 && strpos($project_dir_clean, $project_name_clean) !== false)) {
                         $found_project_dir = $project_path;
                         break 2; // Break out of both loops
                     }

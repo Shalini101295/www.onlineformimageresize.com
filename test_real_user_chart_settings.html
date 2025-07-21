@@ -54,7 +54,7 @@
                 currentUser: currentUser,
                 currentProject: currentProject,
                 userId: currentUser.id || currentUser.username || currentUser.name,
-                projectName: currentProject.name || 'Unknown Project',
+                projectName: currentProject.name || currentProject.id || 'Unknown Project',
                 timestamp: new Date().toISOString()
             };
             
@@ -65,14 +65,14 @@
             const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
             const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
             
-            const userId = currentUser.id || currentUser.username || currentUser.name;
-            const projectName = currentProject.name || 'Unknown Project';
-            
-            if (!userId || !projectName) {
-                $('#saveResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
-                updateDebugOutput('SAVE ERROR', {userId, projectName, currentUser, currentProject});
-                return;
-            }
+                         const userId = currentUser.id || currentUser.username || currentUser.name;
+             const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+             
+             if (!userId || !projectName || projectName === 'Unknown Project') {
+                 $('#saveResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
+                 updateDebugOutput('SAVE ERROR', {userId, projectName, currentUser, currentProject});
+                 return;
+             }
             
             const testSettings = {
                 selectedColumns: ['AGE', 'INCOME', 'STATUS'],
@@ -130,14 +130,14 @@
             const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
             const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
             
-            const userId = currentUser.id || currentUser.username || currentUser.name;
-            const projectName = currentProject.name || 'Unknown Project';
-            
-            if (!userId || !projectName) {
-                $('#loadResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
-                updateDebugOutput('LOAD ERROR', {userId, projectName, currentUser, currentProject});
-                return;
-            }
+                         const userId = currentUser.id || currentUser.username || currentUser.name;
+             const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+             
+             if (!userId || !projectName || projectName === 'Unknown Project') {
+                 $('#loadResult').removeClass('success').addClass('error').show().text('Error: Missing user ID or project name');
+                 updateDebugOutput('LOAD ERROR', {userId, projectName, currentUser, currentProject});
+                 return;
+             }
             
             $.ajax({
                 url: 'simple_chart_settings.php',

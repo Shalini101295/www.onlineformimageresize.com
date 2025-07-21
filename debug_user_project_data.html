@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug User & Project Data</title>
+    <link rel="icon" href="data:,">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .code { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; }
+        .highlight { background: #fff3cd; padding: 8px; border-radius: 4px; margin: 5px 0; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug User & Project Data</h1>
+
+    <div class="section">
+        <h3>Current Data Analysis</h3>
+        <button class="btn btn-primary" onclick="analyzeData()">Analyze Current Data</button>
+        <div id="analysisResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>Directory Structure Check</h3>
+        <button class="btn btn-primary" onclick="checkDirectories()">Check User Directories</button>
+        <div id="directoryResult" class="code"></div>
+    </div>
+
+    <div class="section">
+        <h3>Test Chart Settings with Current Data</h3>
+        <button class="btn btn-success" onclick="testWithCurrentData()">Test Save with Extracted Data</button>
+        <div id="testResult" class="code"></div>
+    </div>
+
+    <script>
+        function analyzeData() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            // Extract data the same way the chart settings functions do
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            const analysis = {
+                'Raw currentUser': currentUser,
+                'Raw currentProject': currentProject,
+                '---EXTRACTED DATA---': '---',
+                'Extracted userId': userId,
+                'Extracted projectName': projectName,
+                '---VALIDATION---': '---',
+                'Has userId': !!userId,
+                'Has projectName': !!projectName,
+                'ProjectName not Unknown': projectName !== 'Unknown Project',
+                'Would pass validation': !!(userId && projectName && projectName !== 'Unknown Project'),
+                '---DATA FOR BACKEND---': '---',
+                'Will send to backend': {
+                    user_id: userId,
+                    project_name: projectName,
+                    action: 'save'
+                }
+            };
+            
+            $('#analysisResult').text(JSON.stringify(analysis, null, 2));
+        }
+        
+        function checkDirectories() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            
+            $.ajax({
+                url: 'debug_filesystem.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: userId
+                }),
+                success: function(response) {
+                    $('#directoryResult').text(JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#directoryResult').text('Error: ' + error + '\n' + xhr.responseText);
+                }
+            });
+        }
+        
+        function testWithCurrentData() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            const userId = currentUser.id || currentUser.username || currentUser.name;
+            const projectName = currentProject.name || currentProject.id || 'Unknown Project';
+            
+            if (!userId || !projectName || projectName === 'Unknown Project') {
+                $('#testResult').text('VALIDATION FAILED:\n' + JSON.stringify({
+                    userId: userId,
+                    projectName: projectName,
+                    error: 'Missing or invalid data'
+                }, null, 2));
+                return;
+            }
+            
+            const testData = {
+                user_id: userId,
+                project_id: currentProject.id || 'unknown',
+                project_name: projectName,
+                action: 'save',
+                settings: {
+                    test: true,
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            $('#testResult').text('SENDING TO BACKEND:\n' + JSON.stringify(testData, null, 2) + '\n\n');
+            
+            $.ajax({
+                url: 'simple_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(testData),
+                success: function(response) {
+                    $('#testResult').append('BACKEND RESPONSE:\n' + JSON.stringify(response, null, 2));
+                },
+                error: function(xhr, status, error) {
+                    $('#testResult').append('BACKEND ERROR:\n' + error + '\n' + xhr.responseText);
+                }
+            });
+        }
+        
+        // Auto-analyze on load
+        $(document).ready(function() {
+            analyzeData();
+        });
+    </script>
+</body>
+</html>
