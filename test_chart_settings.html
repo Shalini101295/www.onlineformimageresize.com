@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chart Settings Test & Debug</title>
+    <link rel="icon" href="data:,">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        .section { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 8px; padding: 20px; margin: 20px 0; }
+        .btn { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background: #007bff; color: white; }
+        .btn-success { background: #28a745; color: white; }
+        .btn-warning { background: #ffc107; color: black; }
+        .debug-output { background: #f1f3f4; padding: 10px; border-radius: 4px; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        .message { padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+    </style>
+</head>
+<body>
+    <h1>🧪 Chart Settings Save/Load Test</h1>
+
+    <div class="section">
+        <h3>1. Setup Test Data</h3>
+        <button class="btn btn-primary" onclick="setupTestData()">Setup Test User & Project</button>
+        <div id="setupResult" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h3>2. Test Save Chart Settings</h3>
+        <button class="btn btn-success" onclick="testSaveSettings()">Save Test Chart Settings</button>
+        <div id="saveResult" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h3>3. Test Load Chart Settings</h3>
+        <button class="btn btn-warning" onclick="testLoadSettings()">Load Chart Settings</button>
+        <div id="loadResult" class="message" style="display: none;"></div>
+    </div>
+
+    <div class="section">
+        <h3>4. Debug Information</h3>
+        <button class="btn btn-primary" onclick="showDebugInfo()">Show Current State</button>
+        <div id="debugOutput" class="debug-output"></div>
+    </div>
+
+    <script>
+        // Setup test data
+        function setupTestData() {
+            const testUser = {
+                username: 'test_user',
+                name: 'Test User',
+                id: 'test_123'
+            };
+            
+            const testProject = {
+                name: 'Test Project',
+                description: 'Test project for chart settings',
+                id: 'proj_test_456'
+            };
+            
+            // Save to localStorage
+            localStorage.setItem('currentUser', JSON.stringify(testUser));
+            localStorage.setItem('currentProject', JSON.stringify(testProject));
+            
+            // Set global variables
+            window.currentUser = testUser;
+            window.currentProject = testProject;
+            
+            $('#setupResult').removeClass('error').addClass('success').show().text('Test data setup complete!');
+            showDebugInfo();
+        }
+        
+        // Test saving chart settings
+        function testSaveSettings() {
+            const testSettings = {
+                selectedColumns: ['AGE', 'INCOME', 'STATUS'],
+                theme: 'default',
+                chartConfigs: {
+                    'AGE': {
+                        type: 'bar',
+                        isMultiColumn: false,
+                        multiColumns: [],
+                        color: '#ff6384'
+                    },
+                    'INCOME': {
+                        type: 'pie',
+                        isMultiColumn: true,
+                        multiColumns: ['STATUS'],
+                        color: '#36a2eb'
+                    }
+                },
+                filterSettings: {
+                    'AGE': ['25-34', '35-44'],
+                    'STATUS': ['Active']
+                },
+                timestamp: new Date().toISOString(),
+                projectName: 'Test Project',
+                projectId: 'proj_test_456'
+            };
+            
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            if (!currentUser.username || !currentProject.name) {
+                $('#saveResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
+                return;
+            }
+            
+            $.ajax({
+                url: 'debug_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: currentUser.username,
+                    project_id: currentProject.id,
+                    project_name: currentProject.name,
+                    action: 'save',
+                    settings: testSettings
+                }),
+                success: function(response) {
+                    console.log('Save response:', response);
+                    if (response.success) {
+                        $('#saveResult').removeClass('error').addClass('success').show().text('Chart settings saved successfully!');
+                    } else {
+                        $('#saveResult').removeClass('success').addClass('error').show().text('Save failed: ' + response.message);
+                    }
+                    updateDebugOutput('SAVE RESPONSE', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Save error:', error, xhr.responseText);
+                    $('#saveResult').removeClass('success').addClass('error').show().text('Save error: ' + error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        updateDebugOutput('SAVE ERROR', errorResponse);
+                    } catch (e) {
+                        updateDebugOutput('SAVE ERROR', {error: error, response: xhr.responseText});
+                    }
+                }
+            });
+        }
+        
+        // Test loading chart settings
+        function testLoadSettings() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+            
+            if (!currentUser.username || !currentProject.name) {
+                $('#loadResult').removeClass('success').addClass('error').show().text('Error: User or project data missing. Please setup test data first.');
+                return;
+            }
+            
+            $.ajax({
+                url: 'debug_chart_settings.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: currentUser.username,
+                    project_id: currentProject.id,
+                    project_name: currentProject.name,
+                    action: 'load'
+                }),
+                success: function(response) {
+                    console.log('Load response:', response);
+                    if (response.success && response.settings) {
+                        $('#loadResult').removeClass('error').addClass('success').show().text('Chart settings loaded successfully!');
+                    } else {
+                        $('#loadResult').removeClass('success').addClass('error').show().text('Load result: ' + response.message);
+                    }
+                    updateDebugOutput('LOAD RESPONSE', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Load error:', error, xhr.responseText);
+                    $('#loadResult').removeClass('success').addClass('error').show().text('Load error: ' + error);
+                    try {
+                        const errorResponse = JSON.parse(xhr.responseText);
+                        updateDebugOutput('LOAD ERROR', errorResponse);
+                    } catch (e) {
+                        updateDebugOutput('LOAD ERROR', {error: error, response: xhr.responseText});
+                    }
+                }
+            });
+        }
+        
+        // Show current debug information
+        function showDebugInfo() {
+            const debugInfo = {
+                localStorage_currentUser: localStorage.getItem('currentUser'),
+                localStorage_currentProject: localStorage.getItem('currentProject'),
+                window_currentUser: window.currentUser,
+                window_currentProject: window.currentProject,
+                timestamp: new Date().toISOString()
+            };
+            
+            updateDebugOutput('CURRENT STATE', debugInfo);
+        }
+        
+        // Update debug output
+        function updateDebugOutput(title, data) {
+            const current = $('#debugOutput').text();
+            const newOutput = `${title} (${new Date().toLocaleTimeString()}):\n${JSON.stringify(data, null, 2)}\n\n${current}`;
+            $('#debugOutput').text(newOutput);
+        }
+        
+        // Initialize
+        $(document).ready(function() {
+            showDebugInfo();
+        });
+    </script>
+</body>
+</html>

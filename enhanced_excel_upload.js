@@ -23,6 +23,7 @@ function loadCurrentUserAndProject() {
     const userData = localStorage.getItem('currentUser');
     if (userData) {
         currentUser = JSON.parse(userData);
+        window.currentUser = currentUser; // Make globally available
         // Update header user info
         if (currentUser.username || currentUser.name) {
             $('#currentUserName').text(currentUser.username || currentUser.name);
@@ -33,6 +34,7 @@ function loadCurrentUserAndProject() {
     const projectData = localStorage.getItem('currentProject');
     if (projectData) {
         currentProject = JSON.parse(projectData);
+        window.currentProject = currentProject; // Make globally available
         // Update header project info
         if (currentProject.name) {
             $('#projectTitle').text(currentProject.name);
@@ -666,6 +668,19 @@ $(document).ready(function() {
     
     // Initialize the system
     initializeEnhancedUpload();
+    
+    // Also make sure global variables are set from localStorage
+    if (!window.currentUser) {
+        window.currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+    }
+    if (!window.currentProject) {
+        window.currentProject = JSON.parse(localStorage.getItem('currentProject') || '{}');
+    }
+    
+    console.log('Global variables set:', {
+        currentUser: window.currentUser,
+        currentProject: window.currentProject
+    });
     
     // Set up upload button for new layout
     $('#uploadExcelBtn').on('click', function() {

@@ -87,8 +87,15 @@ function setupFilterOptions() {
 
 // Chart Settings Save/Load Functionality
 function saveChartSettings() {
-  if (!currentUser || !currentProject) {
+  // Get current user and project data from localStorage or global variables
+  const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+  
+  if (!currentUser || !currentProject || !currentUser.username || !currentProject.name) {
     console.warn('No user or project data available for saving chart settings');
+    console.log('Current user:', currentUser);
+    console.log('Current project:', currentProject);
+    alert('Unable to save chart settings. User or project information is missing.');
     return;
   }
   
@@ -137,59 +144,95 @@ function saveChartSettings() {
   
   // Save to server
   $.ajax({
-    url: 'save_chart_settings.php',
+    url: 'debug_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
-      user_id: currentUser.id || currentUser.username,
-      project_id: currentProject.id,
-      project_name: currentProject.name,
+      user_id: currentUser.username || currentUser.id || currentUser.name,
+      project_id: currentProject.id || 'unknown',
+      project_name: currentProject.name || 'Unknown Project',
+      action: 'save',
       settings: settingsData
     }),
     success: function(response) {
+      console.log('Save chart settings response:', response);
       if (response.success) {
         console.log('Chart settings saved successfully');
         showMessage('Chart settings saved!', 'success');
       } else {
         console.error('Failed to save chart settings:', response.message);
         showMessage('Failed to save chart settings: ' + response.message, 'error');
+        if (response.debug_info) {
+          console.error('Debug info:', response.debug_info);
+        }
       }
     },
     error: function(xhr, status, error) {
       console.error('Error saving chart settings:', error);
+      console.error('Response:', xhr.responseText);
+      try {
+        const errorResponse = JSON.parse(xhr.responseText);
+        console.error('Parsed error response:', errorResponse);
+        if (errorResponse.debug_info) {
+          console.error('Debug info:', errorResponse.debug_info);
+        }
+      } catch (e) {
+        console.error('Could not parse error response');
+      }
       showMessage('Error saving chart settings: ' + error, 'error');
     }
   });
 }
 
 function loadChartSettings() {
-  if (!currentUser || !currentProject) {
+  // Get current user and project data from localStorage or global variables
+  const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+  const currentProject = window.currentProject || JSON.parse(localStorage.getItem('currentProject') || '{}');
+  
+  if (!currentUser || !currentProject || !currentUser.username || !currentProject.name) {
     console.warn('No user or project data available for loading chart settings');
+    console.log('Current user:', currentUser);
+    console.log('Current project:', currentProject);
     return;
   }
   
   console.log('Loading chart settings for project:', currentProject.name);
   
   $.ajax({
-    url: 'load_chart_settings.php',
+    url: 'debug_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
-      user_id: currentUser.id || currentUser.username,
-      project_id: currentProject.id,
-      project_name: currentProject.name
+      user_id: currentUser.username || currentUser.id || currentUser.name,
+      project_id: currentProject.id || 'unknown',
+      project_name: currentProject.name || 'Unknown Project',
+      action: 'load'
     }),
     success: function(response) {
+      console.log('Chart settings response:', response);
       if (response.success && response.settings) {
         console.log('Chart settings loaded:', response.settings);
         applyChartSettings(response.settings);
         showMessage('Chart settings loaded!', 'success');
       } else {
         console.log('No saved chart settings found for this project');
+        if (response.debug_info) {
+          console.log('Debug info:', response.debug_info);
+        }
       }
     },
     error: function(xhr, status, error) {
       console.error('Error loading chart settings:', error);
+      console.error('Response:', xhr.responseText);
+      try {
+        const errorResponse = JSON.parse(xhr.responseText);
+        console.error('Parsed error response:', errorResponse);
+        if (errorResponse.debug_info) {
+          console.error('Debug info:', errorResponse.debug_info);
+        }
+      } catch (e) {
+        console.error('Could not parse error response');
+      }
     }
   });
 }
