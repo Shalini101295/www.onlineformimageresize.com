@@ -159,7 +159,7 @@ function saveChartSettings() {
   
   // Save to server
   $.ajax({
-    url: 'debug_chart_settings_detailed.php',
+    url: 'simple_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -173,10 +173,11 @@ function saveChartSettings() {
       console.log('Save chart settings response:', response);
       if (response.success) {
         console.log('Chart settings saved successfully');
-        showMessage('Chart settings saved!', 'success');
-      } else {
-        console.error('Failed to save chart settings:', response.message);
-        showMessage('Failed to save chart settings: ' + response.message, 'error');
+        console.log('Chart settings saved!');
+        alert('Chart settings saved successfully!');
+              } else {
+          console.error('Failed to save chart settings:', response.message);
+          alert('Failed to save chart settings: ' + response.message);
         if (response.debug_info) {
           console.error('Debug info:', response.debug_info);
         }
@@ -194,7 +195,8 @@ function saveChartSettings() {
       } catch (e) {
         console.error('Could not parse error response');
       }
-      showMessage('Error saving chart settings: ' + error, 'error');
+      console.error('Error saving chart settings:', error);
+      alert('Error saving chart settings: ' + error);
     }
   });
 }
@@ -228,7 +230,7 @@ function loadChartSettings() {
   console.log('Loading chart settings for project:', currentProject.name);
   
   $.ajax({
-    url: 'debug_chart_settings_detailed.php',
+    url: 'simple_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -242,7 +244,8 @@ function loadChartSettings() {
       if (response.success && response.settings) {
         console.log('Chart settings loaded:', response.settings);
         applyChartSettings(response.settings);
-        showMessage('Chart settings loaded!', 'success');
+        console.log('Chart settings loaded!');
+        alert('Chart settings loaded successfully!');
       } else {
         console.log('No saved chart settings found for this project');
         if (response.debug_info) {
