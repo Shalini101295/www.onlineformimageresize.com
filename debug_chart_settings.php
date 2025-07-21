@@ -50,8 +50,25 @@ try {
     // Sanitize user_id for directory name
     $safe_user_id = preg_replace('/[^a-zA-Z0-9_-]/', '_', $user_id);
     
-    // Create user projects directory path
-    $user_dir = "user_projects/{$safe_user_id}";
+    // Try multiple possible user directory patterns
+    $possible_user_dirs = [
+        "user_projects/{$safe_user_id}",
+        "user_projects/{$user_id}",
+        "user_projects/" . str_replace(' ', '_', $user_id)
+    ];
+    
+    $user_dir = null;
+    foreach ($possible_user_dirs as $possible_dir) {
+        if (is_dir($possible_dir)) {
+            $user_dir = $possible_dir;
+            break;
+        }
+    }
+    
+    // If no existing user directory found, use the first option for creation
+    if (!$user_dir) {
+        $user_dir = $possible_user_dirs[0];
+    }
     
     $debug_info['paths'] = [
         'user_dir' => $user_dir,
@@ -66,11 +83,41 @@ try {
         foreach ($dirs as $dir) {
             if ($dir === '.' || $dir === '..') continue;
             if (is_dir("$user_dir/$dir")) {
-                // Check if this directory matches our project
-                if (strpos($dir, $project_name) !== false || strpos($project_name, $dir) !== false) {
+                // More flexible matching - check for project name or ID in directory name
+                $dir_lower = strtolower($dir);
+                $project_name_lower = strtolower($project_name);
+                $project_id_lower = strtolower($project_id);
+                
+                // Extract project name without spaces and special characters for matching
+                $clean_project_name = preg_replace('/[^a-zA-Z0-9]/', '', $project_name_lower);
+                $clean_dir = preg_replace('/[^a-zA-Z0-9]/', '', $dir_lower);
+                
+                if (strpos($dir_lower, $project_name_lower) !== false || 
+                    strpos($project_name_lower, $dir_lower) !== false ||
+                    strpos($dir_lower, $project_id_lower) !== false ||
+                    strpos($clean_dir, $clean_project_name) !== false ||
+                    $dir === $project_name ||
+                    // Check if directory contains project name in any form
+                    (strlen($clean_project_name) > 2 && strpos($clean_dir, $clean_project_name) !== false)) {
                     $project_dirs[] = "$user_dir/$dir";
                 }
             }
+        }
+    }
+    
+    // If no match found, try to create a directory for save operations
+    if (empty($project_dirs) && $action === 'save') {
+        // Create a project directory with a safe name
+        $safe_project_name = preg_replace('/[^a-zA-Z0-9_-]/', '_', $project_name);
+        $new_project_dir = "$user_dir/{$safe_project_name}_proj_" . time();
+        
+        if (!is_dir($user_dir)) {
+            mkdir($user_dir, 0755, true);
+        }
+        
+        if (mkdir($new_project_dir, 0755, true)) {
+            $project_dirs[] = $new_project_dir;
+            $debug_info['created_project_dir'] = $new_project_dir;
         }
     }
     

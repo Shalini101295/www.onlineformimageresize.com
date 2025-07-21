@@ -43,6 +43,7 @@
     <div class="section">
         <h3>4. Debug Information</h3>
         <button class="btn btn-primary" onclick="showDebugInfo()">Show Current State</button>
+        <button class="btn btn-primary" onclick="checkFilesystem()">Check Filesystem</button>
         <div id="debugOutput" class="debug-output"></div>
     </div>
 
@@ -110,16 +111,16 @@
             }
             
             $.ajax({
-                url: 'debug_chart_settings.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    user_id: currentUser.username,
-                    project_id: currentProject.id,
-                    project_name: currentProject.name,
-                    action: 'save',
-                    settings: testSettings
-                }),
+                                 url: 'simple_chart_settings.php',
+                 method: 'POST',
+                 contentType: 'application/json',
+                 data: JSON.stringify({
+                     user_id: currentUser.username,
+                     project_id: currentProject.id,
+                     project_name: currentProject.name,
+                     action: 'save',
+                     settings: testSettings
+                 }),
                 success: function(response) {
                     console.log('Save response:', response);
                     if (response.success) {
@@ -152,16 +153,16 @@
                 return;
             }
             
-            $.ajax({
-                url: 'debug_chart_settings.php',
-                method: 'POST',
-                contentType: 'application/json',
-                data: JSON.stringify({
-                    user_id: currentUser.username,
-                    project_id: currentProject.id,
-                    project_name: currentProject.name,
-                    action: 'load'
-                }),
+                         $.ajax({
+                 url: 'simple_chart_settings.php',
+                 method: 'POST',
+                 contentType: 'application/json',
+                 data: JSON.stringify({
+                     user_id: currentUser.username,
+                     project_id: currentProject.id,
+                     project_name: currentProject.name,
+                     action: 'load'
+                 }),
                 success: function(response) {
                     console.log('Load response:', response);
                     if (response.success && response.settings) {
@@ -202,6 +203,28 @@
             const current = $('#debugOutput').text();
             const newOutput = `${title} (${new Date().toLocaleTimeString()}):\n${JSON.stringify(data, null, 2)}\n\n${current}`;
             $('#debugOutput').text(newOutput);
+        }
+        
+        // Check filesystem structure
+        function checkFilesystem() {
+            const currentUser = window.currentUser || JSON.parse(localStorage.getItem('currentUser') || '{}');
+            
+            $.ajax({
+                url: 'debug_filesystem.php',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    user_id: currentUser.username || currentUser.id || 'unknown'
+                }),
+                success: function(response) {
+                    console.log('Filesystem response:', response);
+                    updateDebugOutput('FILESYSTEM CHECK', response);
+                },
+                error: function(xhr, status, error) {
+                    console.error('Filesystem check error:', error);
+                    updateDebugOutput('FILESYSTEM ERROR', {error: error, response: xhr.responseText});
+                }
+            });
         }
         
         // Initialize

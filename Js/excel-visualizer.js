@@ -144,7 +144,7 @@ function saveChartSettings() {
   
   // Save to server
   $.ajax({
-    url: 'debug_chart_settings.php',
+    url: 'simple_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
@@ -199,7 +199,7 @@ function loadChartSettings() {
   console.log('Loading chart settings for project:', currentProject.name);
   
   $.ajax({
-    url: 'debug_chart_settings.php',
+    url: 'simple_chart_settings.php',
     method: 'POST',
     contentType: 'application/json',
     data: JSON.stringify({
