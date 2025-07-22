@@ -6,6 +6,41 @@
     padding: 0;
 }
 
+.multi-column-overview table {
+	    font-size: 15px !important;
+}
+
+.ChartOverview {
+    font-size: 15px !important;
+}
+
+
+.project-sections-wrapper {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+}
+
+.project-sections-wrapper section {
+  flex: 1 1 300px;
+  background: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.05);
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .project-sections-wrapper {
+    flex-direction: column;
+    gap: 20px;
+    padding: 10px;
+  }
+}
+
+
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -205,8 +240,8 @@ body {
 }
 
 .column-selection select option {
-    background: #2c3e50;
-    color: white;
+      background: #fff;
+    color: #000;
     padding: 4px;
 }
 
